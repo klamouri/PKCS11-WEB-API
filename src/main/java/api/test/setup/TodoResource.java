@@ -1,4 +1,4 @@
-package api.test;
+package api.test.setup;
 
 
 import javax.ws.rs.Consumes;
@@ -8,6 +8,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import api.test.setup.beans.Todo;
+
 @Path("/todo")
 public class TodoResource {
   // This method is called if XMLis request
@@ -15,15 +17,16 @@ public class TodoResource {
   @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
   public Todo getJSONOrXML() {
     Todo todo = new Todo();
-    todo.setSummary("This is my first todo");
-    todo.setDescription("This is my first todo Description");
+    todo.setSummary("AutoBinding JSON to Bean");
+    todo.setDescription("Json To Bean Ok");
     return todo;
   }
   @POST
   @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
   @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
   public Todo postJSONorXML(Todo td) {
-	  td.setSummary("Modified Summary");
+	  td.setDescription("AutoBinding JSON to Bean");
+	  td.setSummary("Bean To JSON Ok");
 	  return td;
   }
 

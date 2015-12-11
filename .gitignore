@@ -13,3 +13,5 @@ buildNumber.properties
 .settings/
 .DS_store
 
+libs/iaik/pkcs11Wrapper/1.0/pkcs11Wrapper-1.0.jar
+

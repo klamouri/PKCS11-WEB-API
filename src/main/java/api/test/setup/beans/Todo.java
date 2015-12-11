@@ -1,4 +1,4 @@
-package api.test;
+package api.test.setup.beans;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
