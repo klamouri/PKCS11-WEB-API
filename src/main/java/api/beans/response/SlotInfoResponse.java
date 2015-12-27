@@ -4,6 +4,7 @@ public class SlotInfoResponse {
 	
 	private String manufacturerID;
 	private String slotDescription;
+	private long idToken;
 	private boolean isHardwareSlot;
 	private boolean isRemovableDevice; 
 	private boolean isTokenPresent;
@@ -23,20 +24,26 @@ public class SlotInfoResponse {
 	public boolean isHardwareSlot() {
 		return isHardwareSlot;
 	}
-	public void setHardwareSlot(boolean isHardwareSlot) {
+	public void setIsHardwareSlot(boolean isHardwareSlot) {
 		this.isHardwareSlot = isHardwareSlot;
 	}
 	public boolean isRemovableDevice() {
 		return isRemovableDevice;
 	}
-	public void setRemovableDevice(boolean isRemovableDevice) {
+	public void setIsRemovableDevice(boolean isRemovableDevice) {
 		this.isRemovableDevice = isRemovableDevice;
 	}
 	public boolean isTokenPresent() {
 		return isTokenPresent;
 	}
-	public void setTokenPresent(boolean isTokenPresent) {
+	public void setIsTokenPresent(boolean isTokenPresent) {
 		this.isTokenPresent = isTokenPresent;
+	}
+	public long getIdToken() {
+		return idToken;
+	}
+	public void setIdToken(long idToken) {
+		this.idToken = idToken;
 	} 
 
 
