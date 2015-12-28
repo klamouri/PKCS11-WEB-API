@@ -1,5 +1,8 @@
 package api.beans.response;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class SlotInfoResponse {
 	
 	private String manufacturerID;
@@ -24,19 +27,19 @@ public class SlotInfoResponse {
 	public boolean isHardwareSlot() {
 		return isHardwareSlot;
 	}
-	public void setIsHardwareSlot(boolean isHardwareSlot) {
+	public void setHardwareSlot(boolean isHardwareSlot) {
 		this.isHardwareSlot = isHardwareSlot;
 	}
 	public boolean isRemovableDevice() {
 		return isRemovableDevice;
 	}
-	public void setIsRemovableDevice(boolean isRemovableDevice) {
+	public void setRemovableDevice(boolean isRemovableDevice) {
 		this.isRemovableDevice = isRemovableDevice;
 	}
 	public boolean isTokenPresent() {
 		return isTokenPresent;
 	}
-	public void setIsTokenPresent(boolean isTokenPresent) {
+	public void setTokenPresent(boolean isTokenPresent) {
 		this.isTokenPresent = isTokenPresent;
 	}
 	public long getIdToken() {

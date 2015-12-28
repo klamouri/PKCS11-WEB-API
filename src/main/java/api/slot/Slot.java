@@ -93,11 +93,11 @@ public class Slot {
 				if (select.contains("slotDescription"))
 					r.setSlotDescription(s.getSlotInfo().getSlotDescription().trim());
 				if (select.contains("isHardwareSlot"))
-					r.setIsHardwareSlot(s.getSlotInfo().isHwSlot());
+					r.setHardwareSlot(s.getSlotInfo().isHwSlot());
 				if (select.contains("isRemovableDevice"))
-					r.setIsRemovableDevice(s.getSlotInfo().isRemovableDevice());
+					r.setRemovableDevice(s.getSlotInfo().isRemovableDevice());
 				if (select.contains("isTokenPresent"))
-					r.setIsTokenPresent(s.getSlotInfo().isTokenPresent());
+					r.setTokenPresent(s.getSlotInfo().isTokenPresent());
 				if (select.contains("idToken"))
 					r.setIdToken(s.getToken().getTokenID());
 				return r;
