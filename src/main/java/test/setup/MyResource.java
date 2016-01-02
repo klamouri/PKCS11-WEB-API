@@ -1,4 +1,4 @@
-package api.test.setup;
+package test.setup;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

@@ -1,4 +1,4 @@
-package api.test.setup;
+package test.setup;
 
 import java.io.IOException;
 
@@ -8,8 +8,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import api.test.setup.beans.Library;
 import iaik.pkcs.pkcs11.Module;
+import test.setup.beans.Library;
 
 @Path("/pkcsTest")
 public class TestPKCS11 {	

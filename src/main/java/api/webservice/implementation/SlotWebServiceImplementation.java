@@ -1,17 +1,13 @@
-package api.slot;
+package api.webservice.implementation;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -21,16 +17,13 @@ import api.beans.response.NbSlotBeanResponse;
 import api.beans.response.SlotInfoResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
+import iaik.pkcs.pkcs11.Slot;
 import iaik.pkcs.pkcs11.TokenException;
 
 @Path("slot")
-public class Slot {
+public class SlotWebServiceImplementation {
 	private Logger l = Logger.getLogger(this.getClass().toString());
 
-	@POST
-	@Consumes({ MediaType.APPLICATION_JSON })
-	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("nbSlot")
 	public NbSlotBeanResponse nbSlot(NbSlotBeanRequest b) {
 		NbSlotBeanResponse r = new NbSlotBeanResponse();
 		try {
@@ -52,10 +45,6 @@ public class Slot {
 		return new NbSlotBeanResponse();
 	}
 
-	@POST
-	@Consumes({ MediaType.APPLICATION_JSON })
-	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idSlot}/info")
 	public SlotInfoResponse slotInfos(Library lib, @PathParam("idSlot") int idSlot,
 			@QueryParam("select") List<String> select) {
 		SlotInfoResponse r = new SlotInfoResponse();
@@ -67,7 +56,7 @@ public class Slot {
 				l.info("Exception durant le initialize :" + e);
 			}
 			try {
-				iaik.pkcs.pkcs11.Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+				Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
 
 				if (idSlot > slots.length)
 					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
@@ -84,9 +73,8 @@ public class Slot {
 					select.add("isRemovableDevice");
 					select.add("isTokenPresent");
 				}
-				
 
-				iaik.pkcs.pkcs11.Slot s = slots[idSlot];
+				Slot s = slots[idSlot];
 
 				if (select.contains("manufacturerID"))
 					r.setManufacturerID(s.getSlotInfo().getManufacturerID().trim());

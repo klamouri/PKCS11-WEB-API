@@ -1,4 +1,4 @@
-package api.test.setup;
+package test.setup;
 
 
 import javax.ws.rs.Consumes;
@@ -8,7 +8,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import api.test.setup.beans.Todo;
+import test.setup.beans.Todo;
 
 @Path("/todo")
 public class TodoResource {
