@@ -15,10 +15,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import api.beans.request.InitRequest;
 import api.beans.request.Library;
 import api.beans.response.TokenInfoResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
+import iaik.pkcs.pkcs11.Token.SessionReadWriteBehavior;
+import iaik.pkcs.pkcs11.Token.SessionType;
 import iaik.pkcs.pkcs11.TokenException;
 
 @Path("token")
@@ -165,8 +168,29 @@ public class Token {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	@Path("{idToken}/init")
-	public Response init(Library l, @PathParam("idToken") int idToken) {
-		return null;
+	public Response init(InitRequest r, @PathParam("idToken") int idToken) {
+		try {
+			Module m = Module.getInstance(r.getPath());
+			try {
+				m.initialize(null);
+			} catch (TokenException e) {
+				logger.info("Exception durant le initialize :" + e);
+			}
+			iaik.pkcs.pkcs11.Slot[] slots;
+			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+			if (idToken > slots.length)
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
+			iaik.pkcs.pkcs11.Token t = slots[idToken].getToken();
+			if (t.getTokenInfo().isTokenInitialized())
+				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+						.entity(new ErrorEntity("Your token is already initialized")).build());
+			t.initToken(r.getPinSO().toCharArray(), r.getLabel());
+		} catch (TokenException | IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		return Response.status(Status.NO_CONTENT).build();
 
 	}
 }
