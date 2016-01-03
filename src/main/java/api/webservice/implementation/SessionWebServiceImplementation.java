@@ -1,6 +1,8 @@
 package api.webservice.implementation;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -65,7 +67,9 @@ public class SessionWebServiceImplementation {
 						session.login(userType, r.getPin().toCharArray());
 					}
 				}
-				req.getSession().setAttribute("session", session);
+				Map<Integer, Session> mapSession = new HashMap<>();
+				mapSession.put(Integer.valueOf(idToken), session);
+				req.getSession().setAttribute("session", mapSession);
 			} catch (TokenException e) {
 				throw new WebApplicationException(
 						Response.status(Status.FORBIDDEN).entity(new ErrorEntity("Wrong SO PIN")).build());
@@ -78,16 +82,20 @@ public class SessionWebServiceImplementation {
 
 	}
 
-	public Response testLogin(HttpServletRequest req, LoginRequest r, int idToken) {
-		if (req.getSession().getAttribute("session") != null)
+	public Response testLogin(HttpServletRequest req, int idToken) {
+		@SuppressWarnings("unchecked")
+		Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
+		if (map != null && map.get(Integer.valueOf(idToken)) != null)
 			return Response.status(Status.NO_CONTENT).build();
 		else
 			return Response.status(Status.UNAUTHORIZED).build();
 	}
 
-	public Response logout(HttpServletRequest req, LoginRequest r, int idToken) {
-		if (req.getSession().getAttribute("session") != null){
-			Session s = (Session) req.getSession().getAttribute("session");
+	public Response logout(HttpServletRequest req, int idToken) {
+		@SuppressWarnings("unchecked")
+		Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
+		if (map !=null && map.get(Integer.valueOf(idToken)) != null){
+			Session s = map.get(Integer.valueOf(idToken));
 			try {
 				s.getToken().closeAllSessions();
 			} catch (TokenException e) {

@@ -1,15 +1,13 @@
 package api.webservice.implementation;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.Logger;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import api.beans.request.InitRequest;
-import api.beans.request.Library;
+import api.beans.request.InitTokenBeanRequest;
 import api.beans.response.TokenInfoResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
@@ -22,21 +20,18 @@ import iaik.pkcs.pkcs11.TokenException;
 import iaik.pkcs.pkcs11.TokenInfo;
 
 public class TokenWebServiceImplementation {
-	private Logger logger = Logger.getLogger(this.getClass().toString());
 
-	public TokenInfoResponse tokenInfos(Library l, int idToken,
-			 List<String> select) {
+	public TokenInfoResponse tokenInfos(HttpServletRequest req, int idToken, List<String> select) {
 
 		TokenInfoResponse ti = new TokenInfoResponse();
 		Token t = null;
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
 
 		try {
-			Module m = Module.getInstance(l.getPath());
-			try {
-				m.initialize(null);
-			} catch (TokenException e) {
-				logger.info("Exception durant le initialize :" + e);
-			}
+			
 			Slot[] slots;
 			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
 			if (idToken > slots.length)
@@ -145,26 +140,19 @@ public class TokenWebServiceImplementation {
 				throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 						.entity(new ErrorEntity("Ooops- Error while filling the bean")).build());
 			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (TokenException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
-		throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
-				.entity(new ErrorEntity("Ooops - Something is very wrong")).build());
 	}
 
 
-	public Response init(InitRequest r, int idToken) {
+	public Response init(HttpServletRequest req, InitTokenBeanRequest r, int idToken) {
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
 		try {
-			Module m = Module.getInstance(r.getPath());
-			try {
-				m.initialize(null);
-			} catch (TokenException e) {
-				logger.info("Exception durant le initialize :" + e);
-			}
 			Slot[] slots;
 			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
 			if (idToken > slots.length)
@@ -175,8 +163,9 @@ public class TokenWebServiceImplementation {
 				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
 						.entity(new ErrorEntity("Your token is already initialized")).build());
 			t.initToken(r.getPinSO().toCharArray(), r.getLabel());
-		} catch (TokenException | IOException e1) {
-			e1.printStackTrace();
+		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
 		
 		return Response.status(Status.NO_CONTENT).build();
@@ -184,14 +173,12 @@ public class TokenWebServiceImplementation {
 	}
 	
 
-	public Response reset(InitRequest r, int idToken) {
+	public Response reset(HttpServletRequest req, InitTokenBeanRequest r, int idToken) {
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
 		try {
-			Module m = Module.getInstance(r.getPath());
-			try {
-				m.initialize(null);
-			} catch (TokenException e) {
-				logger.info("Exception durant le initialize :" + e);
-			}
 			Slot[] slots;
 			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
 			if (idToken > slots.length)
@@ -221,7 +208,9 @@ public class TokenWebServiceImplementation {
 			}
 			
 			t.initToken(r.getPinSO().toCharArray(), r.getLabel());
-		} catch (TokenException | IOException e1) {
+		} catch (TokenException ee) {
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
 		
 		return Response.status(Status.NO_CONTENT).build();

@@ -2,7 +2,9 @@ package api.webservice;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -16,28 +18,27 @@ import api.webservice.implementation.SessionWebServiceImplementation;
 @Path("session")
 public class SessionWebService {
 	
-	@POST
+	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idToken}/login")
+	@Path("{idToken}")
 	public Response login(@Context HttpServletRequest req, LoginRequest r, @PathParam("idToken") int idToken) {
 		return new SessionWebServiceImplementation().login(req, r, idToken);
 
 	}
-	@POST
-	@Consumes({ MediaType.APPLICATION_JSON })
+	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idToken}/testlogin")
-	public Response testLogin(@Context HttpServletRequest req, LoginRequest r, @PathParam("idToken") int idToken) {
-		return new SessionWebServiceImplementation().testLogin(req, r, idToken);
+	@Path("{idToken}")
+	public Response testLogin(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
+		return new SessionWebServiceImplementation().testLogin(req, idToken);
 
 	}
-	@POST
-	@Consumes({ MediaType.APPLICATION_JSON })
+	
+	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idToken}/logout")
-	public Response logout(@Context HttpServletRequest req, LoginRequest r, @PathParam("idToken") int idToken) {
-		return new SessionWebServiceImplementation().logout(req, r, idToken);
+	@Path("{idToken}")
+	public Response logout(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
+		return new SessionWebServiceImplementation().logout(req, idToken);
 
 	}
 	

@@ -3,8 +3,7 @@ package api.beans.request;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
-public class Library {
-
+public class ModuleBeanRequest {
 	private String path;
 
 	public String getPath() {
