@@ -9,7 +9,9 @@ import javax.ws.rs.core.Response.Status;
 
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.response.TokenInfoResponse;
+import api.beans.response.TokenMechanismsBeanResponse;
 import api.error.entity.ErrorEntity;
+import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.Slot;
@@ -18,6 +20,7 @@ import iaik.pkcs.pkcs11.Token.SessionReadWriteBehavior;
 import iaik.pkcs.pkcs11.Token.SessionType;
 import iaik.pkcs.pkcs11.TokenException;
 import iaik.pkcs.pkcs11.TokenInfo;
+import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 
 public class TokenWebServiceImplementation {
 
@@ -215,5 +218,28 @@ public class TokenWebServiceImplementation {
 		
 		return Response.status(Status.NO_CONTENT).build();
 
+	}
+
+
+	public TokenMechanismsBeanResponse tokenMechanisms(HttpServletRequest req, int idToken) {
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
+		try {
+			Slot[] slotList = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+			Token tok = slotList[idToken].getToken();
+			Mechanism[] mechList = tok.getMechanismList();
+			TokenMechanismsBeanResponse b = new TokenMechanismsBeanResponse();
+			for(Mechanism mech : mechList){
+				if(mech.getName().equals(PKCS11Constants.CKM_RSA_PKCS)){
+					b.setRSA_PKCS(true);
+				}
+			}
+			return b;
+		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Unable to retrieve slot list")).build());
+		}
 	}
 }
