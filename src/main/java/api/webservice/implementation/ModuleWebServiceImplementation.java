@@ -44,7 +44,7 @@ public class ModuleWebServiceImplementation {
 			throw new WebApplicationException(
 					Response.status(Status.BAD_REQUEST).entity(new ErrorEntity("Module can't be finalized")).build());
 		}
-		req.removeAttribute("module");
+		req.getSession().removeAttribute("module");
 		return Response.status(Status.NO_CONTENT).build();
 	}
 
