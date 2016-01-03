@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -24,12 +21,11 @@ import iaik.pkcs.pkcs11.Token.SessionType;
 import iaik.pkcs.pkcs11.TokenException;
 import iaik.pkcs.pkcs11.TokenInfo;
 
-@Path("token")
 public class TokenWebServiceImplementation {
 	private Logger logger = Logger.getLogger(this.getClass().toString());
 
-	public TokenInfoResponse tokenInfos(Library l, @PathParam("idToken") int idToken,
-			@QueryParam("select") List<String> select) {
+	public TokenInfoResponse tokenInfos(Library l, int idToken,
+			 List<String> select) {
 
 		TokenInfoResponse ti = new TokenInfoResponse();
 		Token t = null;
@@ -161,7 +157,7 @@ public class TokenWebServiceImplementation {
 	}
 
 
-	public Response init(InitRequest r, @PathParam("idToken") int idToken) {
+	public Response init(InitRequest r, int idToken) {
 		try {
 			Module m = Module.getInstance(r.getPath());
 			try {
@@ -188,7 +184,7 @@ public class TokenWebServiceImplementation {
 	}
 	
 
-	public Response reset(InitRequest r, @PathParam("idToken") int idToken) {
+	public Response reset(InitRequest r, int idToken) {
 		try {
 			Module m = Module.getInstance(r.getPath());
 			try {

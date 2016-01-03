@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -20,7 +17,6 @@ import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.Slot;
 import iaik.pkcs.pkcs11.TokenException;
 
-@Path("slot")
 public class SlotWebServiceImplementation {
 	private Logger l = Logger.getLogger(this.getClass().toString());
 
@@ -45,8 +41,7 @@ public class SlotWebServiceImplementation {
 		return new NbSlotBeanResponse();
 	}
 
-	public SlotInfoResponse slotInfos(Library lib, @PathParam("idSlot") int idSlot,
-			@QueryParam("select") List<String> select) {
+	public SlotInfoResponse slotInfos(Library lib, int idSlot, List<String> select) {
 		SlotInfoResponse r = new SlotInfoResponse();
 		try {
 			Module m = Module.getInstance(lib.getPath());
