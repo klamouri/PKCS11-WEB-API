@@ -19,9 +19,26 @@ public class SessionWebService {
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idToken}/reset")
+	@Path("{idToken}/login")
 	public Response login(@Context HttpServletRequest req, LoginRequest r, @PathParam("idToken") int idToken) {
 		return new SessionWebServiceImplementation().login(req, r, idToken);
 
 	}
+	@POST
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Path("{idToken}/testlogin")
+	public Response testLogin(@Context HttpServletRequest req, LoginRequest r, @PathParam("idToken") int idToken) {
+		return new SessionWebServiceImplementation().testLogin(req, r, idToken);
+
+	}
+	@POST
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Path("{idToken}/logout")
+	public Response logout(@Context HttpServletRequest req, LoginRequest r, @PathParam("idToken") int idToken) {
+		return new SessionWebServiceImplementation().logout(req, r, idToken);
+
+	}
+	
 }

@@ -42,24 +42,27 @@ public class SessionWebServiceImplementation {
 						.entity(new ErrorEntity("Your token is not initialized")).build());
 			TokenInfo tokenInfo = t.getTokenInfo();
 			try {
-				Session session = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RO_SESSION, null,
+				t.closeAllSessions();
+				Session session = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null,
 						null);
 				if (tokenInfo.isLoginRequired()) {
 					// check, if the token has own means to authenticate the
 					// user; e.g. a PIN-pad on the reader
+					boolean userType;
+					if (r.getUserType().equalsIgnoreCase("user"))
+						userType = Session.UserType.USER;
+					else if (r.getUserType().equalsIgnoreCase("so"))
+						userType = Session.UserType.SO;
+					else
+						throw new WebApplicationException(
+								Response.status(Status.BAD_REQUEST).entity(new ErrorEntity("Bad user type")).build());
 					if (tokenInfo.isProtectedAuthenticationPath()) {
 						System.out.println("Please enter the user PIN at the PIN-pad of your reader.");
-						session.login(Session.UserType.SO, null); // the token
-																	// prompts
-																	// the PIN
-																	// by other
-																	// means;
-																	// e.g.
-																	// PIN-pad
-						session.closeSession();
+						// the token prompts the PIN by other means; e.g.
+						// PIN-pad
+						session.login(userType, null);
 					} else {
-						session.login(Session.UserType.SO, r.getPin().toCharArray());
-						session.closeSession();
+						session.login(userType, r.getPin().toCharArray());
 					}
 				}
 				req.getSession().setAttribute("session", session);
@@ -73,5 +76,29 @@ public class SessionWebServiceImplementation {
 
 		return Response.status(Status.NO_CONTENT).build();
 
+	}
+
+	public Response testLogin(HttpServletRequest req, LoginRequest r, int idToken) {
+		if (req.getSession().getAttribute("session") != null)
+			return Response.status(Status.NO_CONTENT).build();
+		else
+			return Response.status(Status.UNAUTHORIZED).build();
+	}
+
+	public Response logout(HttpServletRequest req, LoginRequest r, int idToken) {
+		if (req.getSession().getAttribute("session") != null){
+			Session s = (Session) req.getSession().getAttribute("session");
+			try {
+				s.getToken().closeAllSessions();
+			} catch (TokenException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			req.getSession().removeAttribute("session");
+			return Response.status(Status.NO_CONTENT).build();
+		}
+			
+		else
+			return Response.status(Status.UNAUTHORIZED).build();
 	}
 }
