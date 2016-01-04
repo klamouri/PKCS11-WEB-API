@@ -11,6 +11,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import api.beans.request.ModuleBeanRequest;
+import api.beans.response.ModuleBeanResponse;
 import api.webservice.implementation.ModuleWebServiceImplementation;
 
 @Path("module")
@@ -19,7 +20,7 @@ public class ModuleWebService {
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Response setModule(@Context HttpServletRequest req, ModuleBeanRequest m) {
+	public ModuleBeanResponse setModule(@Context HttpServletRequest req, ModuleBeanRequest m) {
 		return new ModuleWebServiceImplementation().setModule(req, m);
 
 	}

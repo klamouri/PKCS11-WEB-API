@@ -8,13 +8,14 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import api.beans.request.ModuleBeanRequest;
+import api.beans.response.ModuleBeanResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.TokenException;
 
 public class ModuleWebServiceImplementation {
 
-	public Response setModule(HttpServletRequest req, ModuleBeanRequest m) {
+	public ModuleBeanResponse setModule(HttpServletRequest req, ModuleBeanRequest m) {
 		Module module;
 		try {
 			module = Module.getInstance(m.getPath());
@@ -31,7 +32,10 @@ public class ModuleWebServiceImplementation {
 			//		Response.status(Status.BAD_REQUEST).entity(new ErrorEntity("Module already initialized or not initializable")).build());
 		}
 		req.getSession().setAttribute("module", module);
-		return Response.status(Status.NO_CONTENT).build();
+		
+		ModuleBeanResponse bb = new ModuleBeanResponse();
+		bb.setJsessionid(req.getSession().getId());
+		return bb;
 		
 	}
 

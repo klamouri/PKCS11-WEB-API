@@ -15,4 +15,8 @@
         <servlet-name>Jersey Web Application</servlet-name>
         <url-pattern>/webapi/*</url-pattern>
     </servlet-mapping>
+    <context-param>
+  		<param-name>companyName</param-name>
+  		<param-value>false</param-value>
+	</context-param>
 </web-app>
