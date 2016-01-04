@@ -1,6 +1,5 @@
 package api.webservice.implementation;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -27,12 +26,10 @@ public class SessionWebServiceImplementation {
 
 	public Response login(HttpServletRequest req, LoginRequest r, int idToken) {
 		try {
-			Module m = Module.getInstance(r.getPath());
-			try {
-				m.initialize(null);
-			} catch (TokenException e) {
-				logger.info("Exception durant le initialize :" + e);
-			}
+			Module m = (Module) req.getSession().getAttribute("module");
+			if (m == null)
+				throw new WebApplicationException(
+						Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
 			Slot[] slots;
 			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
 			if (idToken > slots.length)
@@ -75,7 +72,8 @@ public class SessionWebServiceImplementation {
 						Response.status(Status.FORBIDDEN).entity(new ErrorEntity("Wrong SO PIN")).build());
 			}
 
-		} catch (TokenException | IOException e1) {
+		} catch (TokenException e) {
+			
 		}
 
 		return Response.status(Status.NO_CONTENT).build();

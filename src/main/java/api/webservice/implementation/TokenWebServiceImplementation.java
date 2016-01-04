@@ -16,6 +16,7 @@ import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.Slot;
+import iaik.pkcs.pkcs11.State;
 import iaik.pkcs.pkcs11.Token;
 import iaik.pkcs.pkcs11.Token.SessionReadWriteBehavior;
 import iaik.pkcs.pkcs11.Token.SessionType;
@@ -30,11 +31,11 @@ public class TokenWebServiceImplementation {
 		Token t = null;
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
-			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-					.entity(new ErrorEntity("Module is not initialized")).build());
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
 
 		try {
-			
+
 			Slot[] slots;
 			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
 			if (idToken > slots.length)
@@ -149,12 +150,11 @@ public class TokenWebServiceImplementation {
 		}
 	}
 
-
 	public Response init(HttpServletRequest req, InitTokenBeanRequest r, int idToken) {
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
-			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-					.entity(new ErrorEntity("Module is not initialized")).build());
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
 		try {
 			Slot[] slots;
 			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
@@ -170,17 +170,16 @@ public class TokenWebServiceImplementation {
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
-		
+
 		return Response.status(Status.NO_CONTENT).build();
 
 	}
-	
 
 	public Response reset(HttpServletRequest req, InitTokenBeanRequest r, int idToken) {
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
-			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-					.entity(new ErrorEntity("Module is not initialized")).build());
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
 		try {
 			Slot[] slots;
 			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
@@ -192,88 +191,142 @@ public class TokenWebServiceImplementation {
 				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
 						.entity(new ErrorEntity("Your token is not initialized")).build());
 			TokenInfo tokenInfo = t.getTokenInfo();
-			try{
-				Session session = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null, null);
+			try {
+				Session session = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null,
+						null);
 				if (tokenInfo.isLoginRequired()) {
-				     // check, if the token has own means to authenticate the user; e.g. a PIN-pad on the reader
-				     if (tokenInfo.isProtectedAuthenticationPath()) {
-				       System.out.println("Please enter the user PIN at the PIN-pad of your reader.");
-				       session.login(Session.UserType.SO, null); // the token prompts the PIN by other means; e.g. PIN-pad
-				       session.closeSession();
-				     } else {
-				       session.login(Session.UserType.SO, r.getPinSO().toCharArray());
-				       session.closeSession();
-				     }
-				   }
-			} catch(TokenException e){
-				throw new WebApplicationException(Response.status(Status.FORBIDDEN)
-						.entity(new ErrorEntity("Wrong SO PIN")).build());
+					// check, if the token has own means to authenticate the
+					// user; e.g. a PIN-pad on the reader
+					if (tokenInfo.isProtectedAuthenticationPath()) {
+						System.out.println("Please enter the user PIN at the PIN-pad of your reader.");
+						session.login(Session.UserType.SO, null); // the token
+																	// prompts
+																	// the PIN
+																	// by other
+																	// means;
+																	// e.g.
+																	// PIN-pad
+						session.closeSession();
+					} else {
+						session.login(Session.UserType.SO, r.getPinSO().toCharArray());
+						session.closeSession();
+					}
+				}
+			} catch (TokenException e) {
+				throw new WebApplicationException(
+						Response.status(Status.FORBIDDEN).entity(new ErrorEntity("Wrong SO PIN")).build());
 			}
-			
+
 			t.initToken(r.getPinSO().toCharArray(), r.getLabel());
 		} catch (TokenException ee) {
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
-		
+
 		return Response.status(Status.NO_CONTENT).build();
 
 	}
-
 
 	@SuppressWarnings("unchecked")
 	public Response changePassword(HttpServletRequest req, ChangePasswordTokenBeanRequest r, int idToken) {
 		Session s;
 		Token t;
-		if(req.getSession().getAttribute("session") != null && ((Map<Integer,Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken)) != null){
-			s = ((Map<Integer,Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken));
-			t = s.getToken();
-		}
-		else{
-			Module m = (Module) req.getSession().getAttribute("module");
-			if (m == null)
-				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-						.entity(new ErrorEntity("Module is not initialized")).build());
-			Slot[] slots;
-			try {
-				slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
-				if (idToken > slots.length)
+
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
+		Slot[] slots;
+		try {
+			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+			if (idToken > slots.length)
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
+			t = slots[idToken].getToken();
+
+			if (t.getTokenInfo().isLoginRequired()) {
+				if (req.getSession().getAttribute("session") != null
+						&& ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+								.get(Integer.valueOf(idToken)) != null) {
+					s = ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+							.get(Integer.valueOf(idToken));
+				} else
 					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-							.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
-				t = slots[idToken].getToken();
+							.entity(new ErrorEntity("You must be logged into the token")).build());
+			} else {
 				s = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null, null);
-			} catch (TokenException e) {
-				throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
-						.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 			}
-			/*try {
-				if (t.getTokenInfo().isLoginRequired()) {
-				     // check, if the token has own means to authenticate the user; e.g. a PIN-pad on the reader
-				     if (t.getTokenInfo().isProtectedAuthenticationPath()) {
-				       System.out.println("Please enter the user PIN at the PIN-pad of your reader.");
-				       s.login(Session.UserType.SO, null); // the token prompts the PIN by other means; e.g. PIN-pad;
-				     } else {
-				       s.login(Session.UserType.SO, r.getOldPin().toCharArray());
-				     }
-				   }
-				if (t.getTokenInfo().isProtectedAuthenticationPath()){
-					
+			try {
+				if(t.getTokenInfo().isProtectedAuthenticationPath()){
+					s.setPIN(null, null);
 				}
 				else{
 					s.setPIN(r.getOldPin().toCharArray(), r.getNewPin().toCharArray());
 				}
+				return Response.status(Status.NO_CONTENT).build();
 			} catch (TokenException e) {
-				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-						.entity(new ErrorEntity("Ooops- Problem while Setting the new PIN")).build());
-			}*/
+				if(e.getMessage().equals("CKR_PIN_INCORRECT"))
+					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("Wrong PIN")).build());
+				else
+					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+							.entity(new ErrorEntity("Something went wrong while setting the new pin")).build());
+			}
+
+		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
-		return null;
 	}
 
-
+	@SuppressWarnings("unchecked")
 	public Response initUserPin(HttpServletRequest req, InitUserPasswordTokenBeanRequest r, int idToken) {
-		// TODO Auto-generated method stub
-		return null;
+		Session s;
+		Token t;
+
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
+		Slot[] slots;
+		try {
+			slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+			if (idToken > slots.length)
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
+			t = slots[idToken].getToken();
+
+			if (t.getTokenInfo().isLoginRequired()) {
+				if (req.getSession().getAttribute("session") != null
+						&& ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+								.get(Integer.valueOf(idToken)) != null) {
+					s = ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+							.get(Integer.valueOf(idToken));
+					if(!s.getSessionInfo().getState().equals(State.RW_SO_FUNCTIONS))
+						throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+								.entity(new ErrorEntity("You're not connected as SO RW session")).build());
+				} else
+					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+							.entity(new ErrorEntity("You must be logged into the token")).build());
+			} else {
+				s = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null, null);
+			}
+			try {
+				if(t.getTokenInfo().isProtectedAuthenticationPath()){
+					s.initPIN(null);
+				}
+				else{
+					s.initPIN(r.getPin().toCharArray());
+				}
+				return Response.status(Status.NO_CONTENT).build();
+			} catch (TokenException e) {
+					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+							.entity(new ErrorEntity("Something went wrong while setting the pin")).build());
+			}
+
+		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
+		}
 	}
 }
-

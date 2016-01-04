@@ -2,15 +2,9 @@ package api.beans.request;
 
 public class LoginRequest {
 
-	private String path;
 	private String pin;
 	private String userType;
-	public String getPath() {
-		return path;
-	}
-	public void setPath(String path) {
-		this.path = path;
-	}
+
 	public String getPin() {
 		return pin;
 	}
