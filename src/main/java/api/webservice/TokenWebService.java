@@ -19,6 +19,7 @@ import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
 import api.beans.response.TokenInfoResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
+import api.webservice.implementation.TokenMechanismWebServiceImplementation;
 import api.webservice.implementation.TokenWebServiceImplementation;
 
 @Path("token")
@@ -69,7 +70,7 @@ public class TokenWebService {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@Path("{idToken}/mechanisms")
 	public TokenMechanismsBeanResponse tokenMechanisms(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
-		return new TokenWebServiceImplementation().tokenMechanisms(req, idToken);
+		return new TokenMechanismWebServiceImplementation().tokenMechanisms(req, idToken);
 
 	}
 }
