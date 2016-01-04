@@ -1,13 +1,16 @@
 package api.webservice.implementation;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import api.beans.request.ChangePasswordTokenBeanRequest;
 import api.beans.request.InitTokenBeanRequest;
+import api.beans.request.InitUserPasswordTokenBeanRequest;
 import api.beans.response.TokenInfoResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
@@ -190,7 +193,7 @@ public class TokenWebServiceImplementation {
 						.entity(new ErrorEntity("Your token is not initialized")).build());
 			TokenInfo tokenInfo = t.getTokenInfo();
 			try{
-				Session session = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RO_SESSION, null, null);
+				Session session = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null, null);
 				if (tokenInfo.isLoginRequired()) {
 				     // check, if the token has own means to authenticate the user; e.g. a PIN-pad on the reader
 				     if (tokenInfo.isProtectedAuthenticationPath()) {
@@ -215,5 +218,61 @@ public class TokenWebServiceImplementation {
 		
 		return Response.status(Status.NO_CONTENT).build();
 
+	}
+
+
+	@SuppressWarnings("unchecked")
+	public Response changePassword(HttpServletRequest req, ChangePasswordTokenBeanRequest r, int idToken) {
+		Session s;
+		Token t;
+		if(req.getSession().getAttribute("session") != null && ((Map<Integer,Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken)) != null){
+			s = ((Map<Integer,Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken));
+			t = s.getToken();
+		}
+		else{
+			Module m = (Module) req.getSession().getAttribute("module");
+			if (m == null)
+				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+						.entity(new ErrorEntity("Module is not initialized")).build());
+			Slot[] slots;
+			try {
+				slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+				if (idToken > slots.length)
+					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+							.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
+				t = slots[idToken].getToken();
+				s = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null, null);
+			} catch (TokenException e) {
+				throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+						.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
+			}
+			/*try {
+				if (t.getTokenInfo().isLoginRequired()) {
+				     // check, if the token has own means to authenticate the user; e.g. a PIN-pad on the reader
+				     if (t.getTokenInfo().isProtectedAuthenticationPath()) {
+				       System.out.println("Please enter the user PIN at the PIN-pad of your reader.");
+				       s.login(Session.UserType.SO, null); // the token prompts the PIN by other means; e.g. PIN-pad;
+				     } else {
+				       s.login(Session.UserType.SO, r.getOldPin().toCharArray());
+				     }
+				   }
+				if (t.getTokenInfo().isProtectedAuthenticationPath()){
+					
+				}
+				else{
+					s.setPIN(r.getOldPin().toCharArray(), r.getNewPin().toCharArray());
+				}
+			} catch (TokenException e) {
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("Ooops- Problem while Setting the new PIN")).build());
+			}*/
+		}
+		return null;
+	}
+
+
+	public Response initUserPin(HttpServletRequest req, InitUserPasswordTokenBeanRequest r, int idToken) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

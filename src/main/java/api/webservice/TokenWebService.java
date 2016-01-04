@@ -14,7 +14,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import api.beans.request.ChangePasswordTokenBeanRequest;
 import api.beans.request.InitTokenBeanRequest;
+import api.beans.request.InitUserPasswordTokenBeanRequest;
 import api.beans.response.TokenInfoResponse;
 import api.webservice.implementation.TokenWebServiceImplementation;
 
@@ -43,6 +45,22 @@ public class TokenWebService {
 	@Path("reset/{idToken}")
 	public Response reset(@Context HttpServletRequest req, InitTokenBeanRequest r, @PathParam("idToken") int idToken) {
 		return new TokenWebServiceImplementation().reset(req, r, idToken);
+
+	}
+	
+	@PUT
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Path("changePW/{idToken}")
+	public Response changePassword(@Context HttpServletRequest req, ChangePasswordTokenBeanRequest r, @PathParam("idToken") int idToken) {
+		return new TokenWebServiceImplementation().changePassword(req, r, idToken);
+
+	}
+	
+	@PUT
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Path("changePW/{idToken}")
+	public Response initUserPin(@Context HttpServletRequest req, InitUserPasswordTokenBeanRequest r, @PathParam("idToken") int idToken) {
+		return new TokenWebServiceImplementation().initUserPin(req, r, idToken);
 
 	}
 }
