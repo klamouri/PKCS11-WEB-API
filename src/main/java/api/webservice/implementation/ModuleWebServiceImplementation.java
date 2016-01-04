@@ -25,12 +25,13 @@ public class ModuleWebServiceImplementation {
 		
 		try {
 			module.initialize(null);
+			req.getSession().setAttribute("module", module);
+			return Response.status(Status.NO_CONTENT).build();
 		} catch (TokenException e) {
 			throw new WebApplicationException(
 					Response.status(Status.BAD_REQUEST).entity(new ErrorEntity("Module already initialized or not initializable")).build());
 		}
-		req.getSession().setAttribute("module", module);
-		return Response.status(Status.NO_CONTENT).build();
+		
 	}
 
 	public Response unsetModule(HttpServletRequest req) {
@@ -40,12 +41,13 @@ public class ModuleWebServiceImplementation {
 					Response.status(Status.BAD_REQUEST).entity(new ErrorEntity("Module not initialized")).build());
 		try {
 			m.finalize();
+			req.getSession().removeAttribute("module");
+			return Response.status(Status.NO_CONTENT).build();
 		} catch (Throwable e) {
 			throw new WebApplicationException(
 					Response.status(Status.BAD_REQUEST).entity(new ErrorEntity("Module can't be finalized")).build());
 		}
-		req.getSession().removeAttribute("module");
-		return Response.status(Status.NO_CONTENT).build();
+		
 	}
 
 }
