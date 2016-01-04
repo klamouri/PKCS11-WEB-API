@@ -175,6 +175,7 @@ public class TokenWebServiceImplementation {
 
 	}
 
+	@SuppressWarnings("unchecked")
 	public Response reset(HttpServletRequest req, InitTokenBeanRequest r, int idToken) {
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
@@ -190,35 +191,18 @@ public class TokenWebServiceImplementation {
 			if (!t.getTokenInfo().isTokenInitialized())
 				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
 						.entity(new ErrorEntity("Your token is not initialized")).build());
-			TokenInfo tokenInfo = t.getTokenInfo();
-			try {
-				Session session = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null,
-						null);
-				if (tokenInfo.isLoginRequired()) {
-					// check, if the token has own means to authenticate the
-					// user; e.g. a PIN-pad on the reader
-					if (tokenInfo.isProtectedAuthenticationPath()) {
-						System.out.println("Please enter the user PIN at the PIN-pad of your reader.");
-						session.login(Session.UserType.SO, null); // the token
-																	// prompts
-																	// the PIN
-																	// by other
-																	// means;
-																	// e.g.
-																	// PIN-pad
-						session.closeSession();
-					} else {
-						session.login(Session.UserType.SO, r.getPinSO().toCharArray());
-						session.closeSession();
-					}
-				}
-			} catch (TokenException e) {
-				throw new WebApplicationException(
-						Response.status(Status.FORBIDDEN).entity(new ErrorEntity("Wrong SO PIN")).build());
+			
+			if(t.getTokenInfo().isProtectedAuthenticationPath()){
+				t.initToken(null, r.getLabel());
 			}
-
-			t.initToken(r.getPinSO().toCharArray(), r.getLabel());
+			else {
+				t.initToken(r.getPinSO().toCharArray(), r.getLabel());
+			}
+			
 		} catch (TokenException ee) {
+			if(ee.getMessage().equals("CKR_SESSION_EXISTS"))
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You should not be logged")).build());
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
