@@ -59,7 +59,7 @@ public class TokenWebService {
 	
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
-	@Path("changePW/{idToken}")
+	@Path("initUserPin/{idToken}")
 	public Response initUserPin(@Context HttpServletRequest req, InitUserPasswordTokenBeanRequest r, @PathParam("idToken") int idToken) {
 		return new TokenWebServiceImplementation().initUserPin(req, r, idToken);
 	
