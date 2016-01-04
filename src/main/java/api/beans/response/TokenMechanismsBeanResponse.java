@@ -1,5 +1,8 @@
 package api.beans.response;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class TokenMechanismsBeanResponse {
 	private boolean AES_CBC;
 	private boolean AES_CBC_ENCRYPT_DATA;
