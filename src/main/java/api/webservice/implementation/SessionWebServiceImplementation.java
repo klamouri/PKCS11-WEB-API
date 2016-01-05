@@ -68,8 +68,12 @@ public class SessionWebServiceImplementation {
 				mapSession.put(Integer.valueOf(idToken), session);
 				req.getSession().setAttribute("session", mapSession);
 			} catch (TokenException e) {
-				throw new WebApplicationException(
-						Response.status(Status.FORBIDDEN).entity(new ErrorEntity("Wrong SO PIN")).build());
+				if(e.getMessage().equals("CKR_PIN_INCORRECT"))
+					throw new WebApplicationException(
+						Response.status(Status.FORBIDDEN).entity(new ErrorEntity("Wrong PIN")).build());
+				else
+					throw new WebApplicationException(
+							Response.status(Status.FORBIDDEN).entity(new ErrorEntity(e.getMessage())).build());
 			}
 
 		} catch (TokenException e) {

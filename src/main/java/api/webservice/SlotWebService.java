@@ -28,7 +28,7 @@ public class SlotWebService {
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idSlot}/info")
+	@Path("info/{idSlot}")
 	public SlotInfoResponse slotInfos(@Context HttpServletRequest req, @PathParam("idSlot") int idSlot,
 			@QueryParam("select") List<String> select) {
 		return new SlotWebServiceImplementation().slotInfos(req, idSlot, select);

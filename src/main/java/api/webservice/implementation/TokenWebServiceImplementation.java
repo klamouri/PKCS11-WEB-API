@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response.Status;
 import api.beans.request.ChangePasswordTokenBeanRequest;
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
+import api.beans.response.RandomBeanResponse;
 import api.beans.response.TokenInfoResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
@@ -21,7 +22,6 @@ import iaik.pkcs.pkcs11.Token;
 import iaik.pkcs.pkcs11.Token.SessionReadWriteBehavior;
 import iaik.pkcs.pkcs11.Token.SessionType;
 import iaik.pkcs.pkcs11.TokenException;
-import iaik.pkcs.pkcs11.TokenInfo;
 
 public class TokenWebServiceImplementation {
 
@@ -175,7 +175,6 @@ public class TokenWebServiceImplementation {
 
 	}
 
-	@SuppressWarnings("unchecked")
 	public Response reset(HttpServletRequest req, InitTokenBeanRequest r, int idToken) {
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
@@ -288,7 +287,7 @@ public class TokenWebServiceImplementation {
 							.get(Integer.valueOf(idToken));
 					if(!s.getSessionInfo().getState().equals(State.RW_SO_FUNCTIONS))
 						throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-								.entity(new ErrorEntity("You're not connected as SO RW session")).build());
+								.entity(new ErrorEntity("You're not connected as SO in a RW session")).build());
 				} else
 					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 							.entity(new ErrorEntity("You must be logged into the token")).build());
@@ -312,5 +311,46 @@ public class TokenWebServiceImplementation {
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 					.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 		}
+	}
+
+	public RandomBeanResponse tokenGetRandom(HttpServletRequest req, int idToken, int nbByte) {
+		Session s;
+		Token t;
+
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
+		Slot[] slots;
+		if (req.getSession().getAttribute("session") != null
+				&& ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+						.get(Integer.valueOf(idToken)) != null) {
+			s = ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+					.get(Integer.valueOf(idToken));
+		}
+		else {
+			try {
+				slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+				if (idToken > slots.length)
+					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+							.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
+				t = slots[idToken].getToken();
+				s = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RO_SESSION, null, null);
+				
+			} catch (TokenException e) {
+				throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+						.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
+			}
+		}
+		
+		try {
+			RandomBeanResponse r = new RandomBeanResponse();
+			r.setBytesArray(s.generateRandom(nbByte));
+			return r;
+		} catch (TokenException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		return null;
 	}
 }

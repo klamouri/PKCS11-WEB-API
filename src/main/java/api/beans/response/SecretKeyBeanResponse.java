@@ -1,7 +1,6 @@
 package api.beans.response;
 
 import iaik.pkcs.pkcs11.objects.DateAttribute;
-import iaik.pkcs.pkcs11.objects.MechanismArrayAttribute;
 
 public class SecretKeyBeanResponse {
 //	public String secretKeyString;
