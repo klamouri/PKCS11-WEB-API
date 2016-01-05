@@ -19,6 +19,7 @@ import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
 import api.beans.response.TokenInfoResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
+import api.beans.response.RandomBeanResponse;
 import api.webservice.implementation.TokenMechanismWebServiceImplementation;
 import api.webservice.implementation.TokenWebServiceImplementation;
 
@@ -71,6 +72,14 @@ public class TokenWebService {
 	@Path("mechanisms/{idToken}")
 	public TokenMechanismsBeanResponse tokenMechanisms(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
 		return new TokenMechanismWebServiceImplementation().tokenMechanisms(req, idToken);
+
+	}
+	
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Path("random/{idToken}/{nbByte}")
+	public RandomBeanResponse tokenGetRandom(@Context HttpServletRequest req, @PathParam("idToken") int idToken, @PathParam("nbByte") int nbByte) {
+		return new TokenWebServiceImplementation().tokenGetRandom(req, idToken, nbByte);
 
 	}
 }
