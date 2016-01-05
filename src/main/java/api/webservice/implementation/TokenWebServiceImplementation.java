@@ -287,7 +287,7 @@ public class TokenWebServiceImplementation {
 							.get(Integer.valueOf(idToken));
 					if(!s.getSessionInfo().getState().equals(State.RW_SO_FUNCTIONS))
 						throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-								.entity(new ErrorEntity("You're not connected as SO RW session")).build());
+								.entity(new ErrorEntity("You're not connected as SO in a RW session")).build());
 				} else
 					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 							.entity(new ErrorEntity("You must be logged into the token")).build());
