@@ -26,7 +26,7 @@ import api.webservice.implementation.TokenWebServiceImplementation;
 public class TokenWebService {
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idToken}/info")
+	@Path("info/{idToken}")
 	public TokenInfoResponse tokenInfos(@Context HttpServletRequest req, @PathParam("idToken") int idToken,
 			@QueryParam("select") List<String> select) {
 		return new TokenWebServiceImplementation().tokenInfos(req, idToken, select);
@@ -68,7 +68,7 @@ public class TokenWebService {
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("{idToken}/mechanisms")
+	@Path("mechanisms/{idToken}")
 	public TokenMechanismsBeanResponse tokenMechanisms(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
 		return new TokenMechanismWebServiceImplementation().tokenMechanisms(req, idToken);
 

@@ -21,7 +21,6 @@ import iaik.pkcs.pkcs11.Token;
 import iaik.pkcs.pkcs11.Token.SessionReadWriteBehavior;
 import iaik.pkcs.pkcs11.Token.SessionType;
 import iaik.pkcs.pkcs11.TokenException;
-import iaik.pkcs.pkcs11.TokenInfo;
 
 public class TokenWebServiceImplementation {
 
@@ -175,7 +174,6 @@ public class TokenWebServiceImplementation {
 
 	}
 
-	@SuppressWarnings("unchecked")
 	public Response reset(HttpServletRequest req, InitTokenBeanRequest r, int idToken) {
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
