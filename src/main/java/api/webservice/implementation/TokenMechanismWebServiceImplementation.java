@@ -1,17 +1,24 @@
 package api.webservice.implementation;
 
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import api.beans.response.SecretKeyBeanResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Module;
+import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.Slot;
 import iaik.pkcs.pkcs11.Token;
 import iaik.pkcs.pkcs11.TokenException;
+import iaik.pkcs.pkcs11.TokenInfo;
+import iaik.pkcs.pkcs11.objects.AESSecretKey;
+import iaik.pkcs.pkcs11.objects.SecretKey;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 
 public class TokenMechanismWebServiceImplementation {
@@ -695,5 +702,74 @@ public class TokenMechanismWebServiceImplementation {
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 					.entity(new ErrorEntity("Unable to retrieve slot list")).build());
 		}
+	}
+	
+	@SuppressWarnings("all")
+	public SecretKeyBeanResponse genSecretKey(HttpServletRequest req, int idToken) {
+		Module m = (Module) req.getSession().getAttribute("module");
+		SecretKeyBeanResponse br = new SecretKeyBeanResponse();
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
+		try {
+			Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+
+			if (idToken > slots.length)
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You're trying to use an out of range ID for the slot")).build());
+			Slot s = slots[idToken];
+			Token t = s.getToken();
+			TokenInfo tInfo = t.getTokenInfo();
+			Session sess;
+			if(tInfo.isLoginRequired()){
+				// Recup session log
+				Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
+				if (map != null && map.get(Integer.valueOf(idToken)) != null)
+					sess = map.get(Integer.valueOf(idToken));
+				else
+					throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+							.entity(new ErrorEntity("You need to be logged into the token to continue")).build());
+			}
+			else{
+				//Recup session non log
+				sess = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RW_SESSION, null, null);
+			}
+			Mechanism keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
+			AESSecretKey secretKeyTpt = new AESSecretKey();
+			secretKeyTpt.getValueLen().setLongValue(new Long(32));
+			
+			SecretKey secretKey = (AESSecretKey)sess.generateKey(keyGenerationMechanism, secretKeyTpt);
+			
+			br.setAlwaysSensitive(secretKey.getAlwaysSensitive().getBooleanValue());
+			br.setCheckValue(secretKey.getCheckValue().getByteArrayValue());
+			br.setDecrypt(secretKey.getDecrypt().getBooleanValue());
+			br.setEncrypt(secretKey.getEncrypt().getBooleanValue());
+			br.setExtractable(secretKey.getExtractable().getBooleanValue());
+			br.setNeverExtractable(secretKey.getExtractable().getBooleanValue());
+			br.setSensitive(secretKey.getSensitive().getBooleanValue());
+			br.setSign(secretKey.getSign().getBooleanValue());
+			br.setTrusted(secretKey.getTrusted().getBooleanValue());
+			br.setUnwrap(secretKey.getUnwrap().getBooleanValue());
+			br.setUnwrapTemplate(secretKey.getUnwrapTemplate().getAttributeArrayValue());
+			br.setVerify(secretKey.getVerify().getBooleanValue());
+			br.setWrap(secretKey.getWrap().getBooleanValue());
+			br.setWrapTemplate(secretKey.getWrapTemplate());
+			br.setWrapWithTrusted(secretKey.getWrapWithTrusted().getBooleanValue());
+			br.setAllowedMechanisms(secretKey.getAllowedMechanisms());
+			br.setDerive(secretKey.getDerive().getBooleanValue());
+			br.setEndDate(secretKey.getEndDate());
+			br.setId(secretKey.getId());
+			br.setKeyGenMechanism(secretKey.getKeyGenMechanism());
+			br.setKeyType(secretKey.getKeyType());
+			br.setLocal(secretKey.getLocal().getBooleanValue());
+			br.setStartDate(secretKey.getEndDate());
+			return br;
+			
+		} catch (TokenException e) {
+			e.printStackTrace();
+		}
+//		br.setAesKeyString("No key generated");
+		
+		return br;
 	}
 }
