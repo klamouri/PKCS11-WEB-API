@@ -110,15 +110,15 @@ public class TokenWebService {
 		return new TokenWebServiceImplementation().listObject(req, idToken);
 
 	}
-	@GET
+	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
+	@Consumes({ MediaType.APPLICATION_JSON })
 	@Path("object/dump/{idToken}/")
 	public DumpTokenBeanResponse tokenDumpObject(@Context HttpServletRequest req, DumpObjectRequest rb, @PathParam("idToken") int idToken) {
 		return new TokenWebServiceImplementation().tokenDumpObject(req, rb, idToken);
 
 	}
 	@DELETE
-	@Produces({ MediaType.APPLICATION_JSON })
 	@Path("object/{idToken}/{handleObject}")
 	public Response tokenDumpObject(@Context HttpServletRequest req, @PathParam("idToken") int idToken, @PathParam("handleObject") int handleObject) {
 		return new TokenWebServiceImplementation().deleteObject(req, idToken, handleObject);
