@@ -155,11 +155,6 @@ public class TokenMechanismWebServiceImplementation {
 
 			SecretKey secretKey = (AESSecretKey)sess.generateKey(keyGenerationMechanism, secretKeyTpt);
 
-			System.out.println("ClassName");
-			System.out.println(secretKey.getClass().getName());
-			System.out.println("Secret key content");
-			System.out.println(secretKey.toString());
-
 			br.setLabel(secretKey.getLabel().toString());
 			br.setModifiable(secretKey.getModifiable().getBooleanValue());
 			br.setPrivated(secretKey.getPrivate().getBooleanValue());
@@ -191,10 +186,9 @@ public class TokenMechanismWebServiceImplementation {
 
 		} catch (TokenException e) {
 			e.printStackTrace();
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Unable to perform secret key generation")).build());
 		}
-		//		br.setAesKeyString("No key generated");
-
-		return br;
 	}
 
 	@SuppressWarnings("unchecked")
