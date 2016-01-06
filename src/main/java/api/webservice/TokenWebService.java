@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -23,6 +24,8 @@ import api.beans.response.SecretKeyBeanResponse;
 import api.beans.response.TokenInfoResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
 import api.beans.response.DumpTokenBeanResponse;
+import api.beans.response.ListTokenBeanResponse;
+
 import api.webservice.implementation.TokenMechanismWebServiceImplementation;
 import api.webservice.implementation.TokenWebServiceImplementation;
 
@@ -101,9 +104,23 @@ public class TokenWebService {
 	}
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("dump/{idToken}/")
+	@Path("object/{idToken}/")
+	public ListTokenBeanResponse listObject(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
+		return new TokenWebServiceImplementation().listObject(req, idToken);
+
+	}
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Path("object/dump/{idToken}/")
 	public DumpTokenBeanResponse tokenDumpObject(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
 		return new TokenWebServiceImplementation().tokenDumpObject(req, idToken);
+
+	}
+	@DELETE
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Path("object/{idToken}/{handleObject}")
+	public Response tokenDumpObject(@Context HttpServletRequest req, @PathParam("idToken") int idToken, @PathParam("handleObject") int handleObject) {
+		return new TokenWebServiceImplementation().deleteObject(req, idToken, handleObject);
 
 	}
 }

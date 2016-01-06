@@ -17,5 +17,5 @@ public class KeyPairBeanResponse {
 	public void setPrivKey(String privKey) {
 		PrivKey = privKey;
 	}
-
+	
 }
