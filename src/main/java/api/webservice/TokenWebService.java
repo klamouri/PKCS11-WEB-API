@@ -22,6 +22,7 @@ import api.beans.response.RandomBeanResponse;
 import api.beans.response.SecretKeyBeanResponse;
 import api.beans.response.TokenInfoResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
+import api.beans.response.DumpTokenBeanResponse;
 import api.webservice.implementation.TokenMechanismWebServiceImplementation;
 import api.webservice.implementation.TokenWebServiceImplementation;
 
@@ -97,5 +98,12 @@ public class TokenWebService {
 	@Path("random/{idToken}/{nbByte}")
 	public RandomBeanResponse tokenGetRandom(@Context HttpServletRequest req, @PathParam("idToken") int idToken, @PathParam("nbByte") int nbByte) {
 		return new TokenWebServiceImplementation().tokenGetRandom(req, idToken, nbByte);
+	}
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Path("dump/{idToken}/")
+	public DumpTokenBeanResponse tokenDumpObject(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
+		return new TokenWebServiceImplementation().tokenDumpObject(req, idToken);
+
 	}
 }
