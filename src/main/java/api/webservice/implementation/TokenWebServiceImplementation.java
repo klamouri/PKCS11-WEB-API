@@ -16,6 +16,7 @@ import api.beans.request.ChangePasswordTokenBeanRequest;
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
 import api.beans.response.DumpTokenBeanResponse;
+import api.beans.response.ListTokenBeanResponse;
 import api.beans.response.RandomBeanResponse;
 import api.beans.response.TokenInfoResponse;
 import api.error.entity.ErrorEntity;
@@ -383,8 +384,8 @@ public class TokenWebServiceImplementation {
 					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 							.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
 				t = slots[idToken].getToken();
-				session = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RO_SESSION, null,
-						null);
+				session = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RO_SESSION,
+						null, null);
 
 			} catch (TokenException e) {
 				throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
@@ -397,47 +398,123 @@ public class TokenWebServiceImplementation {
 			String outputDirectroyName = "/Users/Karim/pkcsTest";
 			String pathSepatator = System.getProperty("file.separator");
 			SessionInfo sessionInfo = session.getSessionInfo();
-	        output_.println(" using session:");
-	        output_.println(sessionInfo);
+			output_.println(" using session:");
+			output_.println(sessionInfo);
 
-	        session.findObjectsInit(null);
-	        Object[] objects = session.findObjects(1);
+			session.findObjectsInit(null);
+			Object[] objects = session.findObjects(1);
 
-	        while ((objects.length > 0) && (objects[0] != null)) {
-	          Object object = objects[0];
-	          long handle = object.getObjectHandle();
-	          String textDumpFilename = outputDirectroyName + pathSepatator + handle + ".txt";
-	          FileOutputStream textDumpStream = new FileOutputStream(textDumpFilename);
-	          textDumpStream.write(object.toString().getBytes("UTF-8"));
-	          textDumpStream.flush();
-	          textDumpStream.close();
+			while ((objects.length > 0) && (objects[0] != null)) {
+				Object object = objects[0];
+				long handle = object.getObjectHandle();
+				String textDumpFilename = outputDirectroyName + pathSepatator + handle + ".txt";
+				FileOutputStream textDumpStream = new FileOutputStream(textDumpFilename);
+				textDumpStream.write(object.toString().getBytes("UTF-8"));
+				textDumpStream.flush();
+				textDumpStream.close();
 
-	          Hashtable attributes = object.getAttributeTable();
-	          if (attributes.containsKey(Attribute.VALUE)) {
-	            ByteArrayAttribute valueAttribute = (ByteArrayAttribute) attributes.get(Attribute.VALUE);
-	            byte[] value = valueAttribute.getByteArrayValue();
-	            if (value != null) {
-	              String valueDumpFilename = outputDirectroyName + pathSepatator + handle + ".value.bin";
-	              FileOutputStream valueDumpStream = new FileOutputStream(valueDumpFilename);
-	              valueDumpStream.write(value);
-	              valueDumpStream.flush();
-	              valueDumpStream.close();
-	              if ((object instanceof X509PublicKeyCertificate) || (object instanceof X509AttributeCertificate)) {
-	                String certificateDumpFilename = outputDirectroyName + pathSepatator + handle + ".der.cer";
-	                FileOutputStream certificateDumpStream = new FileOutputStream(certificateDumpFilename);
-	                certificateDumpStream.write(value);
-	                certificateDumpStream.flush();
-	                certificateDumpStream.close();
-	              }
-	            }
-	          }
-	          objects = session.findObjects(1);
-	        }
+				Hashtable attributes = object.getAttributeTable();
+				if (attributes.containsKey(Attribute.VALUE)) {
+					ByteArrayAttribute valueAttribute = (ByteArrayAttribute) attributes.get(Attribute.VALUE);
+					byte[] value = valueAttribute.getByteArrayValue();
+					if (value != null) {
+						String valueDumpFilename = outputDirectroyName + pathSepatator + handle + ".value.bin";
+						FileOutputStream valueDumpStream = new FileOutputStream(valueDumpFilename);
+						valueDumpStream.write(value);
+						valueDumpStream.flush();
+						valueDumpStream.close();
+						if ((object instanceof X509PublicKeyCertificate)
+								|| (object instanceof X509AttributeCertificate)) {
+							String certificateDumpFilename = outputDirectroyName + pathSepatator + handle + ".der.cer";
+							FileOutputStream certificateDumpStream = new FileOutputStream(certificateDumpFilename);
+							certificateDumpStream.write(value);
+							certificateDumpStream.flush();
+							certificateDumpStream.close();
+						}
+					}
+				}
+				objects = session.findObjects(1);
+			}
 			session.findObjectsFinal();
 		} catch (TokenException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public ListTokenBeanResponse listObject(HttpServletRequest req, int idToken) {
+		Session session;
+		ListTokenBeanResponse r = new ListTokenBeanResponse();
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
+		if (req.getSession().getAttribute("session") != null
+				&& ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+						.get(Integer.valueOf(idToken)) != null) {
+			session = ((Map<Integer, Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken));
+		} else {
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("You're not logged")).build());
+		}
+
+		try {
+			session.findObjectsInit(null);
+			Object[] objects = session.findObjects(1);
+			Map<Long, String> objectHandleToObject = new Hashtable<Long, String>(10);
+
+			while (objects.length > 0) {
+				long objectHandle = objects[0].getObjectHandle();
+				objectHandleToObject.put(new Long(objectHandle), objects[0].toString());
+				objects = session.findObjects(1);
+			}
+			r.setHandleAndObject(objectHandleToObject);
+			session.findObjectsFinal();
+		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Couldn't list the object on the token")).build());
+		}
+
+		return r;
+	}
+
+	public Response deleteObject(HttpServletRequest req, int idToken, long objectHandle) {
+		Session session;
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
+		if (req.getSession().getAttribute("session") != null
+				&& ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+						.get(Integer.valueOf(idToken)) != null) {
+			session = ((Map<Integer, Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken));
+		} else {
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("You're not logged")).build());
+		}
+
+		try {
+			session.findObjectsInit(null);
+			Object[] objects = session.findObjects(1);
+			while (objects.length > 0) {
+				if (objects[0].getObjectHandle() == objectHandle) {
+					try {
+						session.destroyObject(objects[0]);
+					} catch (TokenException e) {
+						throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+								.entity(new ErrorEntity("Couldn't remove the object")).build());
+					}
+					break;
+				}
+				objects = session.findObjects(1);
+			}
+
+			session.findObjectsFinal();
+			return Response.status(Status.NO_CONTENT).build();
+		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Couldn't list the object on the token")).build());
+		}
 	}
 }
