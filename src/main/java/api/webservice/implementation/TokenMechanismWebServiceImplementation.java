@@ -1,6 +1,7 @@
 package api.webservice.implementation;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +148,10 @@ public class TokenMechanismWebServiceImplementation {
 			}
 			Mechanism keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
 			AESSecretKey secretKeyTpt = new AESSecretKey();
-			secretKeyTpt.getValueLen().setLongValue(new Long(32));
+			secretKeyTpt.getValueLen().setLongValue(new Long(32)); 
+			secretKeyTpt.getToken().setBooleanValue(true);
+			secretKeyTpt.getExtractable().setBooleanValue(true);
+			secretKeyTpt.getLabel().setCharArrayValue(Calendar.getInstance().getTime().toString().toCharArray());
 
 			SecretKey secretKey = (AESSecretKey)sess.generateKey(keyGenerationMechanism, secretKeyTpt);
 
@@ -156,6 +160,10 @@ public class TokenMechanismWebServiceImplementation {
 			System.out.println("Secret key content");
 			System.out.println(secretKey.toString());
 
+			br.setLabel(secretKey.getLabel().toString());
+			br.setModifiable(secretKey.getModifiable().getBooleanValue());
+			br.setPrivated(secretKey.getPrivate().getBooleanValue());
+			br.setToken(secretKey.getToken().getBooleanValue());
 			br.setAlwaysSensitive(secretKey.getAlwaysSensitive().getBooleanValue());
 			br.setCheckValue(secretKey.getCheckValue().getByteArrayValue());
 			br.setDecrypt(secretKey.getDecrypt().getBooleanValue());

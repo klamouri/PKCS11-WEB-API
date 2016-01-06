@@ -13,6 +13,10 @@ public class SecretKeyBeanResponse {
 //		this.secretKeyString = secretKeyString;
 //	}
 	
+	private String label;
+	private boolean modifiable;
+	private boolean privated;
+	private boolean token;
 	private boolean alwaysSensitive;
 	private Object checkValue;
 	private boolean decrypt;
@@ -37,7 +41,30 @@ public class SecretKeyBeanResponse {
 	private boolean local;
 	private String startDate;
 	
-	
+	public String getLabel(){
+		return label;
+	}
+	public void setLabel(String label){
+		this.label = label;
+	}
+	public boolean isModifiable() {
+		return modifiable;
+	}
+	public void setModifiable(boolean modifiable) {
+		this.modifiable = modifiable;
+	}
+	public boolean isPrivated() {
+		return privated;
+	}
+	public void setPrivated(boolean privated) {
+		this.privated = privated;
+	}
+	public boolean isToken() {
+		return token;
+	}
+	public void setToken(boolean token) {
+		this.token = token;
+	}
 	public boolean isAlwaysSensitive() {
 		return alwaysSensitive;
 	}
