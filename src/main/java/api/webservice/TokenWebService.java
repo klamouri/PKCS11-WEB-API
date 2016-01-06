@@ -71,8 +71,9 @@ public class TokenWebService {
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	@Path("mechanisms/{idToken}")
-	public TokenMechanismsBeanResponse tokenMechanisms(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
-		return new TokenMechanismWebServiceImplementation().tokenMechanisms(req, idToken);
+	public TokenMechanismsBeanResponse tokenMechanisms(@Context HttpServletRequest req, @PathParam("idToken") int idToken,
+			@QueryParam("select") List<String> select) {
+		return new TokenMechanismWebServiceImplementation().tokenMechanisms(req, idToken, select);
 
 	}
 	
