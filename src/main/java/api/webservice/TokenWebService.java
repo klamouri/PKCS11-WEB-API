@@ -105,7 +105,7 @@ public class TokenWebService {
 	}
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@Path("object/{idToken}/")
+	@Path("object/{idToken}")
 	public ListTokenBeanResponse listObject(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
 		return new TokenWebServiceImplementation().listObject(req, idToken);
 
@@ -113,7 +113,7 @@ public class TokenWebService {
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	@Consumes({ MediaType.APPLICATION_JSON })
-	@Path("object/dump/{idToken}/")
+	@Path("object/dump/{idToken}")
 	public DumpTokenBeanResponse tokenDumpObject(@Context HttpServletRequest req, DumpObjectRequest rb, @PathParam("idToken") int idToken) {
 		return new TokenWebServiceImplementation().tokenDumpObject(req, rb, idToken);
 
