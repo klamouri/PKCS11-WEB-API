@@ -1,21 +1,29 @@
 package api.webservice.implementation;
 
+import java.util.List;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import api.beans.response.SecretKeyBeanResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Module;
+import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.Slot;
 import iaik.pkcs.pkcs11.Token;
 import iaik.pkcs.pkcs11.TokenException;
+import iaik.pkcs.pkcs11.TokenInfo;
+import iaik.pkcs.pkcs11.objects.AESSecretKey;
+import iaik.pkcs.pkcs11.objects.SecretKey;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 
 public class TokenMechanismWebServiceImplementation {
-	public TokenMechanismsBeanResponse tokenMechanisms(HttpServletRequest req, int idToken) {
+	public TokenMechanismsBeanResponse tokenMechanisms(HttpServletRequest req, int idToken, List<String> select) {
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
 			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
@@ -25,675 +33,142 @@ public class TokenMechanismWebServiceImplementation {
 			Token tok = slotList[idToken].getToken();
 			Mechanism[] mechList = tok.getMechanismList();
 			TokenMechanismsBeanResponse b = new TokenMechanismsBeanResponse();
+			if (select.size() == 0 || select.contains("*")){
+				select.clear();
+				select.add("Digest");
+				select.add("FullEncryptDecrypt");
+				select.add("FullSignVerify");
+				select.add("KeyDerivation");
+				select.add("KeyGeneration");
+				select.add("KeyPairGeneration");
+				select.add("SignVerifyRecover");
+				select.add("SingleOperationEncryptDecrypt");
+				select.add("SingleOperationSignVerify");
+				select.add("WrapUnwrap");
+				select.add("Other");
+			}
 			for(Mechanism mech : mechList){
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_CBC){
-					b.setAES_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_CBC_ENCRYPT_DATA){
-					b.setAES_CBC_ENCRYPT_DATA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_CBC_PAD){
-					b.setAES_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_ECB){
-					b.setAES_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_ECB_ENCRYPT_DATA){
-					b.setAES_ECB_ENCRYPT_DATA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_KEY_GEN){
-					b.setAES_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_MAC){
-					b.setAES_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_AES_MAC_GENERAL){
-					b.setAES_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BATON_CBC128){
-					b.setBATON_CBC128(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BATON_COUNTER){
-					b.setBATON_COUNTER(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BATON_ECB128){
-					b.setBATON_ECB128(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BATON_ECB96){
-					b.setBATON_ECB96(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BATON_KEY_GEN){
-					b.setBATON_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BATON_SHUFFLE){
-					b.setBATON_SHUFFLE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BATON_WRAP){
-					b.setBATON_WRAP(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BLOWFISH_CBC){
-					b.setBLOWFISH_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_BLOWFISH_KEY_GEN){
-					b.setBLOWFISH_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST_CBC){
-					b.setCAST_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST_CBC_PAD){
-					b.setCAST_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST_ECB){
-					b.setCAST_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST_KEY_GEN){
-					b.setCAST_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST_MAC){
-					b.setCAST_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST_MAC_GENERAL){
-					b.setCAST_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST128_CBC){
-					b.setCAST128_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST128_CBC_PAD){
-					b.setCAST128_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST128_ECB){
-					b.setCAST128_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST128_KEY_GEN){
-					b.setCAST128_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST128_MAC){
-					b.setCAST128_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST128_MAC_GENERAL){
-					b.setCAST128_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST3_CBC){
-					b.setCAST3_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST3_CBC_PAD){
-					b.setCAST3_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST3_ECB){
-					b.setCAST3_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST3_KEY_GEN){
-					b.setCAST3_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST3_MAC){
-					b.setCAST3_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST3_MAC_GENERAL){
-					b.setCAST3_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST5_CBC){
-					b.setCAST5_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST5_CBC_PAD){
-					b.setCAST5_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST5_ECB){
-					b.setCAST5_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST5_KEY_GEN){
-					b.setCAST5_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST5_MAC){
-					b.setCAST5_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CAST5_MAC_GENERAL){
-					b.setCAST5_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CDMF_CBC){
-					b.setCDMF_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CDMF_CBC_PAD){
-					b.setCDMF_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CDMF_ECB){
-					b.setCDMF_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CDMF_KEY_GEN){
-					b.setCDMF_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CDMF_MAC){
-					b.setCDMF_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CDMF_MAC_GENERAL){
-					b.setCDMF_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CONCATENATE_BASE_AND_DATA){
-					b.setCONCATENATE_BASE_AND_DATA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CONCATENATE_BASE_AND_KEY){
-					b.setCONCATENATE_BASE_AND_KEY(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_CONCATENATE_DATA_AND_BASE){
-					b.setCONCATENATE_DATA_AND_BASE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_CBC){
-					b.setDES_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_CBC_ENCRYPT_DATA){
-					b.setDES_CBC_ENCRYPT_DATA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_CBC_PAD){
-					b.setDES_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_CFB64){
-					b.setDES_CFB64(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_CFB8){
-					b.setDES_CFB8(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_ECB){
-					b.setDES_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_ECB_ENCRYPT_DATA){
-					b.setDES_ECB_ENCRYPT_DATA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_KEY_GEN){
-					b.setDES_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_MAC){
-					b.setDES_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_MAC_GENERAL){
-					b.setDES_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_OFB64){
-					b.setDES_OFB64(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES_OFB8){
-					b.setDES_OFB8(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES2_KEY_GEN){
-					b.setDES2_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_CBC){
-					b.setDES3_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_CBC_ENCRYPT_DATA){
-					b.setDES3_CBC_ENCRYPT_DATA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_CBC_PAD){
-					b.setDES3_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_ECB){
-					b.setDES3_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_ECB_ENCRYPT_DATA){
-					b.setDES3_ECB_ENCRYPT_DATA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_KEY_GEN){
-					b.setDES3_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_MAC){
-					b.setDES3_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DES3_MAC_GENERAL){
-					b.setDES3_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DH_PKCS_DERIVE){
-					b.setDH_PKCS_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DH_PKCS_KEY_PAIR_GEN){
-					b.setDH_PKCS_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DH_PKCS_PARAMETER_GEN){
-					b.setDH_PKCS_PARAMETER_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DSA){
-					b.setDSA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DSA_KEY_PAIR_GEN){
-					b.setDSA_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DSA_PARAMETER_GEN){
-					b.setDSA_PARAMETER_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_DSA_SHA1){
-					b.setDSA_SHA1(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_EC_KEY_PAIR_GEN){
-					b.setEC_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_ECDH1_COFACTOR_DERIVE){
-					b.setECDH1_COFACTOR_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_ECDH1_DERIVE){
-					b.setECDH1_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_ECDSA){
-					b.setECDSA(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_ECDSA_KEY_PAIR_GEN){
-					b.setECDSA_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_ECDSA_SHA1){
-					b.setECDSA_SHA1(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_ECMQV_DERIVE){
-					b.setECMQV_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_EXTRACT_KEY_FROM_KEY){
-					b.setEXTRACT_KEY_FROM_KEY(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_FASTHASH){
-					b.setFASTHASH(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_FORTEZZA_TIMESTAMP){
-					b.setFORTEZZA_TIMESTAMP(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_GENERIC_SECRET_KEY_GEN){
-					b.setGENERIC_SECRET_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_IDEA_CBC){
-					b.setIDEA_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_IDEA_CBC_PAD){
-					b.setIDEA_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_IDEA_ECB){
-					b.setIDEA_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_IDEA_KEY_GEN){
-					b.setIDEA_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_IDEA_MAC){
-					b.setIDEA_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_IDEA_MAC_GENERAL){
-					b.setIDEA_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_JUNIPER_CBC128){
-					b.setJUNIPER_CBC128(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_JUNIPER_COUNTER){
-					b.setJUNIPER_COUNTER(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_JUNIPER_ECB128){
-					b.setJUNIPER_ECB128(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_JUNIPER_KEY_GEN){
-					b.setJUNIPER_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_JUNIPER_SHUFFLE){
-					b.setJUNIPER_SHUFFLE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_JUNIPER_WRAP){
-					b.setJUNIPER_WRAP(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_KEA_KEY_DERIVE){
-					b.setKEA_KEY_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_KEA_KEY_PAIR_GEN){
-					b.setKEA_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_KEY_WRAP_LYNKS){
-					b.setKEY_WRAP_LYNKS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_KEY_WRAP_SET_OAEP){
-					b.setKEY_WRAP_SET_OAEP(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD2){
-					b.setMD2(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD2_HMAC){
-					b.setMD2_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD2_HMAC_GENERAL){
-					b.setMD2_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD2_KEY_DERIVATION){
-					b.setMD2_KEY_DERIVATION(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD2_RSA_PKCS){
-					b.setMD2_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD5){
-					b.setMD5(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD5_HMAC){
-					b.setMD5_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD5_HMAC_GENERAL){
-					b.setMD5_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD5_KEY_DERIVATION){
-					b.setMD5_KEY_DERIVATION(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_MD5_RSA_PKCS){
-					b.setMD5_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBA_SHA1_WITH_SHA1_HMAC){
-					b.setPBA_SHA1_WITH_SHA1_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_MD2_DES_CBC){
-					b.setPBE_MD2_DES_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_MD5_CAST_CBC){
-					b.setPBE_MD5_CAST_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_MD5_CAST128_CBC){
-					b.setPBE_MD5_CAST128_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_MD5_CAST3_CBC){
-					b.setPBE_MD5_CAST3_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_MD5_CAST5_CBC){
-					b.setPBE_MD5_CAST5_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_MD5_DES_CBC){
-					b.setPBE_MD5_DES_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_CAST128_CBC){
-					b.setPBE_SHA1_CAST128_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_CAST5_CBC){
-					b.setPBE_SHA1_CAST5_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_DES2_EDE_CBC){
-					b.setPBE_SHA1_DES2_EDE_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_DES3_EDE_CBC){
-					b.setPBE_SHA1_DES3_EDE_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_RC2_128_CBC){
-					b.setPBE_SHA1_RC2_128_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_RC2_40_CBC){
-					b.setPBE_SHA1_RC2_40_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_RC4_128){
-					b.setPBE_SHA1_RC4_128(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PBE_SHA1_RC4_40){
-					b.setPBE_SHA1_RC4_40(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_PKCS5_PBKD2){
-					b.setPKCS5_PBKD2(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC2_CBC){
-					b.setRC2_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC2_CBC_PAD){
-					b.setRC2_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC2_ECB){
-					b.setRC2_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC2_KEY_GEN){
-					b.setRC2_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC2_MAC){
-					b.setRC2_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC2_MAC_GENERAL){
-					b.setRC2_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC4){
-					b.setRC4(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC4_KEY_GEN){
-					b.setRC4_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC5_CBC){
-					b.setRC5_CBC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC5_CBC_PAD){
-					b.setRC5_CBC_PAD(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC5_ECB){
-					b.setRC5_ECB(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC5_KEY_GEN){
-					b.setRC5_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC5_MAC){
-					b.setRC5_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RC5_MAC_GENERAL){
-					b.setRC5_MAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD128){
-					b.setRIPEMD128(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD128_HMAC){
-					b.setRIPEMD128_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD128_HMAC_GENERAL){
-					b.setRIPEMD128_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD128_RSA_PKCS){
-					b.setRIPEMD128_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD160){
-					b.setRIPEMD160(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD160_HMAC){
-					b.setRIPEMD160_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD160_HMAC_GENERAL){
-					b.setRIPEMD160_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RIPEMD160_RSA_PKCS){
-					b.setRIPEMD160_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_9796){
-					b.setRSA_9796(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_PKCS){
-					b.setRSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_PKCS_KEY_PAIR_GEN){
-					b.setRSA_PKCS_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_PKCS_OAEP){
-					b.setRSA_PKCS_OAEP(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_PKCS_PSS){
-					b.setRSA_PKCS_PSS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_X_509){
-					b.setRSA_X_509(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_X9_31){
-					b.setRSA_X9_31(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_RSA_X9_31_KEY_PAIR_GEN){
-					b.setRSA_X9_31_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA_1){
-					b.setSHA_1(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA_1_HMAC){
-					b.setSHA_1_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA_1_HMAC_GENERAL){
-					b.setSHA_1_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA1_KEY_DERIVATION){
-					b.setSHA1_KEY_DERIVATION(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA1_RSA_PKCS){
-					b.setSHA1_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA1_RSA_PKCS_PSS){
-					b.setSHA1_RSA_PKCS_PSS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA1_RSA_X9_31){
-					b.setSHA1_RSA_X9_31(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA256){
-					b.setSHA256(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA256_HMAC){
-					b.setSHA256_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA256_HMAC_GENERAL){
-					b.setSHA256_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA256_KEY_DERIVATION){
-					b.setSHA256_KEY_DERIVATION(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA256_RSA_PKCS){
-					b.setSHA256_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA256_RSA_PKCS_PSS){
-					b.setSHA256_RSA_PKCS_PSS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA384){
-					b.setSHA384(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA384_HMAC){
-					b.setSHA384_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA384_HMAC_GENERAL){
-					b.setSHA384_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA384_KEY_DERIVATION){
-					b.setSHA384_KEY_DERIVATION(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA384_RSA_PKCS){
-					b.setSHA384_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA384_RSA_PKCS_PSS){
-					b.setSHA384_RSA_PKCS_PSS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA512){
-					b.setSHA512(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA512_HMAC){
-					b.setSHA512_HMAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA512_HMAC_GENERAL){
-					b.setSHA512_HMAC_GENERAL(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA512_KEY_DERIVATION){
-					b.setSHA512_KEY_DERIVATION(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA512_RSA_PKCS){
-					b.setSHA512_RSA_PKCS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SHA512_RSA_PKCS_PSS){
-					b.setSHA512_RSA_PKCS_PSS(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_CBC64){
-					b.setSKIPJACK_CBC64(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_CFB16){
-					b.setSKIPJACK_CFB16(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_CFB32){
-					b.setSKIPJACK_CFB32(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_CFB64){
-					b.setSKIPJACK_CFB64(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_CFB8){
-					b.setSKIPJACK_CFB8(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_ECB64){
-					b.setSKIPJACK_ECB64(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_KEY_GEN){
-					b.setSKIPJACK_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_OFB64){
-					b.setSKIPJACK_OFB64(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_PRIVATE_WRAP){
-					b.setSKIPJACK_PRIVATE_WRAP(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_RELAYX){
-					b.setSKIPJACK_RELAYX(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SKIPJACK_WRAP){
-					b.setSKIPJACK_WRAP(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SSL3_KEY_AND_MAC_DERIVE){
-					b.setSSL3_KEY_AND_MAC_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SSL3_MASTER_KEY_DERIVE){
-					b.setSSL3_MASTER_KEY_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SSL3_MASTER_KEY_DERIVE_DH){
-					b.setSSL3_MASTER_KEY_DERIVE_DH(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SSL3_MD5_MAC){
-					b.setSSL3_MD5_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SSL3_PRE_MASTER_KEY_GEN){
-					b.setSSL3_PRE_MASTER_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_SSL3_SHA1_MAC){
-					b.setSSL3_SHA1_MAC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_TLS_KEY_AND_MAC_DERIVE){
-					b.setTLS_KEY_AND_MAC_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_TLS_MASTER_KEY_DERIVE){
-					b.setTLS_MASTER_KEY_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_TLS_MASTER_KEY_DERIVE_DH){
-					b.setTLS_MASTER_KEY_DERIVE_DH(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_TLS_PRE_MASTER_KEY_GEN){
-					b.setTLS_PRE_MASTER_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_TLS_PRF){
-					b.setTLS_PRF(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_VENDOR_DEFINED){
-					b.setVENDOR_DEFINED(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE){
-					b.setWTLS_CLIENT_KEY_AND_MAC_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_WTLS_MASTER_KEY_DERIVE){
-					b.setWTLS_MASTER_KEY_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_WTLS_MASTER_KEY_DERIVE_DH_ECC){
-					b.setWTLS_MASTER_KEY_DERIVE_DH_ECC(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_WTLS_PRE_MASTER_KEY_GEN){
-					b.setWTLS_PRE_MASTER_KEY_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_WTLS_PRF){
-					b.setWTLS_PRF(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_WTLS_SERVER_KEY_AND_MAC_DERIVE){
-					b.setWTLS_SERVER_KEY_AND_MAC_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_X9_42_DH_DERIVE){
-					b.setX9_42_DH_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_X9_42_DH_HYBRID_DERIVE){
-					b.setX9_42_DH_HYBRID_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_X9_42_DH_KEY_PAIR_GEN){
-					b.setX9_42_DH_KEY_PAIR_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_X9_42_DH_PARAMETER_GEN){
-					b.setX9_42_DH_PARAMETER_GEN(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_X9_42_MQV_DERIVE){
-					b.setX9_42_MQV_DERIVE(true);
-				}
-				if(mech.getMechanismCode()==PKCS11Constants.CKM_XOR_BASE_AND_DATA){
-					b.setXOR_BASE_AND_DATA(true);
-				}
+				if(mech.isDigestMechanism() && select.contains("Digest")) {
+					b.addDigest(mech.getName());
+				}
+				if(mech.isFullEncryptDecryptMechanism() && select.contains("FullEncryptDecrypt")) {
+					b.addFullEncryptDecrypt(mech.getName());
+				}
+				if(mech.isFullSignVerifyMechanism() && select.contains("FullSignVerify")) {
+					b.addFullSignVerify(mech.getName());
+				}
+				if(mech.isKeyDerivationMechanism() && select.contains("KeyDerivation")) {
+					b.addKeyDerivation(mech.getName());
+				}
+				if(mech.isKeyGenerationMechanism() && select.contains("KeyGeneration")) {
+					b.addKeyGeneration(mech.getName());
+				}
+				if(mech.isKeyPairGenerationMechanism() && select.contains("KeyPairGeneration")) {
+					b.addKeyPairGeneration(mech.getName());
+				}
+				if(mech.isSignVerifyRecoverMechanism() && select.contains("SignVerifyRecover")) {
+					b.addSignVerifyRecover(mech.getName());
+				}
+				if(mech.isSingleOperationEncryptDecryptMechanism() && select.contains("SingleOperationEncryptDecrypt")) {
+					b.addSingleOperationEncryptDecrypt(mech.getName());
+				}
+				if(mech.isSingleOperationSignVerifyMechanism() && select.contains("SingleOperationSignVerify")) {
+					b.addSingleOperationSignVerify(mech.getName());
+				}
+				if(mech.isWrapUnwrapMechanism() && select.contains("WrapUnwrap")) {
+					b.addWrapUnwrap(mech.getName());
+				}
+				if(!mech.isDigestMechanism() && 
+						!mech.isFullEncryptDecryptMechanism() &&
+						!mech.isFullSignVerifyMechanism() &&
+						!mech.isKeyDerivationMechanism() &&
+						!mech.isKeyGenerationMechanism() &&
+						!mech.isKeyPairGenerationMechanism() &&
+						!mech.isSignVerifyRecoverMechanism() &&
+						!mech.isSingleOperationEncryptDecryptMechanism() &&
+						!mech.isSingleOperationSignVerifyMechanism() &&
+						!mech.isWrapUnwrapMechanism() &&
+						select.contains("Other")){
+					if(!mech.getName().contains("Unknwon mechanism with code:")){ //thanks for bad spelling "unknwon"
+						b.addOther(mech.getName());
+					}
+				}
+				
+				
 			}
 			return b;
 		} catch (TokenException e) {
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 					.entity(new ErrorEntity("Unable to retrieve slot list")).build());
 		}
+	}
+	
+	@SuppressWarnings("all")
+	public SecretKeyBeanResponse genSecretKey(HttpServletRequest req, int idToken) {
+		Module m = (Module) req.getSession().getAttribute("module");
+		SecretKeyBeanResponse br = new SecretKeyBeanResponse();
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
+		try {
+			Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+
+			if (idToken > slots.length)
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You're trying to use an out of range ID for the slot")).build());
+			Slot s = slots[idToken];
+			Token t = s.getToken();
+			TokenInfo tInfo = t.getTokenInfo();
+			Session sess;
+			if(tInfo.isLoginRequired()){
+				// Recup session log
+				Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
+				if (map != null && map.get(Integer.valueOf(idToken)) != null)
+					sess = map.get(Integer.valueOf(idToken));
+				else
+					throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+							.entity(new ErrorEntity("You need to be logged into the token to continue")).build());
+			}
+			else{
+				//Recup session non log
+				sess = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RW_SESSION, null, null);
+			}
+			Mechanism keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
+			AESSecretKey secretKeyTpt = new AESSecretKey();
+			secretKeyTpt.getValueLen().setLongValue(new Long(32));
+			
+			SecretKey secretKey = (AESSecretKey)sess.generateKey(keyGenerationMechanism, secretKeyTpt);
+			
+			br.setAlwaysSensitive(secretKey.getAlwaysSensitive().getBooleanValue());
+			br.setCheckValue(secretKey.getCheckValue().getByteArrayValue());
+			br.setDecrypt(secretKey.getDecrypt().getBooleanValue());
+			br.setEncrypt(secretKey.getEncrypt().getBooleanValue());
+			br.setExtractable(secretKey.getExtractable().getBooleanValue());
+			br.setNeverExtractable(secretKey.getExtractable().getBooleanValue());
+			br.setSensitive(secretKey.getSensitive().getBooleanValue());
+			br.setSign(secretKey.getSign().getBooleanValue());
+			br.setTrusted(secretKey.getTrusted().getBooleanValue());
+			br.setUnwrap(secretKey.getUnwrap().getBooleanValue());
+			br.setUnwrapTemplate(secretKey.getUnwrapTemplate().getAttributeArrayValue());
+			br.setVerify(secretKey.getVerify().getBooleanValue());
+			br.setWrap(secretKey.getWrap().getBooleanValue());
+			br.setWrapTemplate(secretKey.getWrapTemplate());
+			br.setWrapWithTrusted(secretKey.getWrapWithTrusted().getBooleanValue());
+			br.setAllowedMechanisms(secretKey.getAllowedMechanisms());
+			br.setDerive(secretKey.getDerive().getBooleanValue());
+			br.setEndDate(secretKey.getEndDate());
+			br.setId(secretKey.getId());
+			br.setKeyGenMechanism(secretKey.getKeyGenMechanism());
+			br.setKeyType(secretKey.getKeyType());
+			br.setLocal(secretKey.getLocal().getBooleanValue());
+			br.setStartDate(secretKey.getEndDate());
+			return br;
+			
+		} catch (TokenException e) {
+			e.printStackTrace();
+		}
+//		br.setAesKeyString("No key generated");
+		
+		return br;
 	}
 }
