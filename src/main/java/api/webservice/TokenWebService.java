@@ -18,12 +18,15 @@ import javax.ws.rs.core.Response;
 import api.beans.request.ChangePasswordTokenBeanRequest;
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
+import api.beans.response.KeyPairBeanResponse;
+import api.beans.response.RandomBeanResponse;
 import api.beans.response.SecretKeyBeanResponse;
 import api.beans.response.TokenInfoResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
 import api.beans.response.DumpTokenBeanResponse;
 import api.beans.response.ListTokenBeanResponse;
 import api.beans.response.RandomBeanResponse;
+
 import api.webservice.implementation.TokenMechanismWebServiceImplementation;
 import api.webservice.implementation.TokenWebServiceImplementation;
 
@@ -82,9 +85,16 @@ public class TokenWebService {
 	
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })	
-	@Path("{idToken}/SecretKey")
+	@Path("SecretKey/{idToken}")
 	public SecretKeyBeanResponse genSecretKey(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
 		return new TokenMechanismWebServiceImplementation().genSecretKey(req, idToken);
+	}
+	
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })	
+	@Path("KeyPair/{idToken}")
+	public KeyPairBeanResponse genKeyPair(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
+		return new TokenMechanismWebServiceImplementation().genKeyPair(req, idToken);
 	}
 
 	@GET

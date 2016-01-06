@@ -30,12 +30,12 @@ public class SecretKeyBeanResponse {
 	private boolean wrapWithTrusted;
 	private Object allowedMechanisms;
 	private boolean derive;
-	private DateAttribute endDate;
+	private String endDate;
 	private Object id;
-	private Object keyGenMechanism;
+	private String keyGenMechanism;
 	private Object keyType;
 	private boolean local;
-	private DateAttribute startDate;
+	private String startDate;
 	
 	
 	public boolean isAlwaysSensitive() {
@@ -140,10 +140,10 @@ public class SecretKeyBeanResponse {
 	public void setDerive(boolean derive) {
 		this.derive = derive;
 	}
-	public DateAttribute getEndDate() {
+	public String getEndDate() {
 		return endDate;
 	}
-	public void setEndDate(DateAttribute endDate) {
+	public void setEndDate(String endDate) {
 		this.endDate = endDate;
 	}
 	public Object getId() {
@@ -152,10 +152,10 @@ public class SecretKeyBeanResponse {
 	public void setId(Object id) {
 		this.id = id;
 	}
-	public Object getKeyGenMechanism() {
+	public String getKeyGenMechanism() {
 		return keyGenMechanism;
 	}
-	public void setKeyGenMechanism(Object keyGenMechanism) {
+	public void setKeyGenMechanism(String keyGenMechanism) {
 		this.keyGenMechanism = keyGenMechanism;
 	}
 	public Object getKeyType() {
@@ -170,10 +170,10 @@ public class SecretKeyBeanResponse {
 	public void setLocal(boolean local) {
 		this.local = local;
 	}
-	public DateAttribute getStartDate() {
+	public String getStartDate() {
 		return startDate;
 	}
-	public void setStartDate(DateAttribute startDate) {
+	public void setStartDate(String startDate) {
 		this.startDate = startDate;
 	}
 

@@ -8,6 +8,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import api.beans.response.KeyPairBeanResponse;
 import api.beans.response.SecretKeyBeanResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
 import api.error.entity.ErrorEntity;
@@ -156,12 +157,12 @@ public class TokenMechanismWebServiceImplementation {
 			br.setWrapWithTrusted(secretKey.getWrapWithTrusted().getBooleanValue());
 			br.setAllowedMechanisms(secretKey.getAllowedMechanisms());
 			br.setDerive(secretKey.getDerive().getBooleanValue());
-			br.setEndDate(secretKey.getEndDate());
+			br.setEndDate(secretKey.getEndDate().toString());
 			br.setId(secretKey.getId());
-			br.setKeyGenMechanism(secretKey.getKeyGenMechanism());
+			br.setKeyGenMechanism(secretKey.getKeyGenMechanism().getMechanism().getName());
 			br.setKeyType(secretKey.getKeyType());
 			br.setLocal(secretKey.getLocal().getBooleanValue());
-			br.setStartDate(secretKey.getEndDate());
+			br.setStartDate(secretKey.getEndDate().toString());
 			return br;
 			
 		} catch (TokenException e) {
@@ -170,5 +171,10 @@ public class TokenMechanismWebServiceImplementation {
 //		br.setAesKeyString("No key generated");
 		
 		return br;
+	}
+
+	public KeyPairBeanResponse genKeyPair(HttpServletRequest req, int idToken) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
