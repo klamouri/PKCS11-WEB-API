@@ -1,5 +1,9 @@
 package api.webservice.implementation;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -11,19 +15,28 @@ import javax.ws.rs.core.Response.Status;
 import api.beans.request.ChangePasswordTokenBeanRequest;
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
+import api.beans.response.DumpTokenBeanResponse;
 import api.beans.response.RandomBeanResponse;
 import api.beans.response.TokenInfoResponse;
 import api.error.entity.ErrorEntity;
 import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.Session;
+import iaik.pkcs.pkcs11.SessionInfo;
 import iaik.pkcs.pkcs11.Slot;
 import iaik.pkcs.pkcs11.State;
 import iaik.pkcs.pkcs11.Token;
 import iaik.pkcs.pkcs11.Token.SessionReadWriteBehavior;
 import iaik.pkcs.pkcs11.Token.SessionType;
 import iaik.pkcs.pkcs11.TokenException;
+import iaik.pkcs.pkcs11.objects.Attribute;
+import iaik.pkcs.pkcs11.objects.ByteArrayAttribute;
+import iaik.pkcs.pkcs11.objects.Object;
+import iaik.pkcs.pkcs11.objects.X509AttributeCertificate;
+import iaik.pkcs.pkcs11.objects.X509PublicKeyCertificate;
 
 public class TokenWebServiceImplementation {
+
+	private PrintWriter output_ = new PrintWriter(System.out, true);
 
 	public TokenInfoResponse tokenInfos(HttpServletRequest req, int idToken, List<String> select) {
 
@@ -190,16 +203,15 @@ public class TokenWebServiceImplementation {
 			if (!t.getTokenInfo().isTokenInitialized())
 				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
 						.entity(new ErrorEntity("Your token is not initialized")).build());
-			
-			if(t.getTokenInfo().isProtectedAuthenticationPath()){
+
+			if (t.getTokenInfo().isProtectedAuthenticationPath()) {
 				t.initToken(null, r.getLabel());
-			}
-			else {
+			} else {
 				t.initToken(r.getPinSO().toCharArray(), r.getLabel());
 			}
-			
+
 		} catch (TokenException ee) {
-			if(ee.getMessage().equals("CKR_SESSION_EXISTS"))
+			if (ee.getMessage().equals("CKR_SESSION_EXISTS"))
 				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 						.entity(new ErrorEntity("You should not be logged")).build());
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
@@ -240,17 +252,16 @@ public class TokenWebServiceImplementation {
 				s = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null, null);
 			}
 			try {
-				if(t.getTokenInfo().isProtectedAuthenticationPath()){
+				if (t.getTokenInfo().isProtectedAuthenticationPath()) {
 					s.setPIN(null, null);
-				}
-				else{
+				} else {
 					s.setPIN(r.getOldPin().toCharArray(), r.getNewPin().toCharArray());
 				}
 				return Response.status(Status.NO_CONTENT).build();
 			} catch (TokenException e) {
-				if(e.getMessage().equals("CKR_PIN_INCORRECT"))
-					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-						.entity(new ErrorEntity("Wrong PIN")).build());
+				if (e.getMessage().equals("CKR_PIN_INCORRECT"))
+					throw new WebApplicationException(
+							Response.status(Status.BAD_REQUEST).entity(new ErrorEntity("Wrong PIN")).build());
 				else
 					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 							.entity(new ErrorEntity("Something went wrong while setting the new pin")).build());
@@ -285,7 +296,7 @@ public class TokenWebServiceImplementation {
 								.get(Integer.valueOf(idToken)) != null) {
 					s = ((Map<Integer, Session>) req.getSession().getAttribute("session"))
 							.get(Integer.valueOf(idToken));
-					if(!s.getSessionInfo().getState().equals(State.RW_SO_FUNCTIONS))
+					if (!s.getSessionInfo().getState().equals(State.RW_SO_FUNCTIONS))
 						throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 								.entity(new ErrorEntity("You're not connected as SO in a RW session")).build());
 				} else
@@ -295,16 +306,15 @@ public class TokenWebServiceImplementation {
 				s = t.openSession(SessionType.SERIAL_SESSION, SessionReadWriteBehavior.RW_SESSION, null, null);
 			}
 			try {
-				if(t.getTokenInfo().isProtectedAuthenticationPath()){
+				if (t.getTokenInfo().isProtectedAuthenticationPath()) {
 					s.initPIN(null);
-				}
-				else{
+				} else {
 					s.initPIN(r.getPin().toCharArray());
 				}
 				return Response.status(Status.NO_CONTENT).build();
 			} catch (TokenException e) {
-					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-							.entity(new ErrorEntity("Something went wrong while setting the pin")).build());
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("Something went wrong while setting the pin")).build());
 			}
 
 		} catch (TokenException e) {
@@ -325,32 +335,109 @@ public class TokenWebServiceImplementation {
 		if (req.getSession().getAttribute("session") != null
 				&& ((Map<Integer, Session>) req.getSession().getAttribute("session"))
 						.get(Integer.valueOf(idToken)) != null) {
-			s = ((Map<Integer, Session>) req.getSession().getAttribute("session"))
-					.get(Integer.valueOf(idToken));
-		}
-		else {
+			s = ((Map<Integer, Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken));
+		} else {
 			try {
 				slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
 				if (idToken > slots.length)
 					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 							.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
 				t = slots[idToken].getToken();
-				s = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RO_SESSION, null, null);
-				
+				s = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RO_SESSION, null,
+						null);
+
 			} catch (TokenException e) {
 				throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
 						.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
 			}
 		}
-		
+
 		try {
 			RandomBeanResponse r = new RandomBeanResponse();
 			r.setBytesArray(s.generateRandom(nbByte));
 			return r;
 		} catch (TokenException e) {
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Problem while generating the random byte arrray")).build());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public DumpTokenBeanResponse tokenDumpObject(HttpServletRequest req, int idToken) {
+		Session session;
+		Token t;
+
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(
+					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
+		Slot[] slots;
+		if (req.getSession().getAttribute("session") != null
+				&& ((Map<Integer, Session>) req.getSession().getAttribute("session"))
+						.get(Integer.valueOf(idToken)) != null) {
+			session = ((Map<Integer, Session>) req.getSession().getAttribute("session")).get(Integer.valueOf(idToken));
+		} else {
+			try {
+				slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+				if (idToken > slots.length)
+					throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+							.entity(new ErrorEntity("You're trying to use an out of range ID for the token")).build());
+				t = slots[idToken].getToken();
+				session = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RO_SESSION, null,
+						null);
+
+			} catch (TokenException e) {
+				throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+						.entity(new ErrorEntity("Ooops- Problem while retriving the slots")).build());
+			}
+		}
+
+		try {
+
+			String outputDirectroyName = "/Users/Karim/pkcsTest";
+			String pathSepatator = System.getProperty("file.separator");
+			SessionInfo sessionInfo = session.getSessionInfo();
+	        output_.println(" using session:");
+	        output_.println(sessionInfo);
+
+	        session.findObjectsInit(null);
+	        Object[] objects = session.findObjects(1);
+
+	        while ((objects.length > 0) && (objects[0] != null)) {
+	          Object object = objects[0];
+	          long handle = object.getObjectHandle();
+	          String textDumpFilename = outputDirectroyName + pathSepatator + handle + ".txt";
+	          FileOutputStream textDumpStream = new FileOutputStream(textDumpFilename);
+	          textDumpStream.write(object.toString().getBytes("UTF-8"));
+	          textDumpStream.flush();
+	          textDumpStream.close();
+
+	          Hashtable attributes = object.getAttributeTable();
+	          if (attributes.containsKey(Attribute.VALUE)) {
+	            ByteArrayAttribute valueAttribute = (ByteArrayAttribute) attributes.get(Attribute.VALUE);
+	            byte[] value = valueAttribute.getByteArrayValue();
+	            if (value != null) {
+	              String valueDumpFilename = outputDirectroyName + pathSepatator + handle + ".value.bin";
+	              FileOutputStream valueDumpStream = new FileOutputStream(valueDumpFilename);
+	              valueDumpStream.write(value);
+	              valueDumpStream.flush();
+	              valueDumpStream.close();
+	              if ((object instanceof X509PublicKeyCertificate) || (object instanceof X509AttributeCertificate)) {
+	                String certificateDumpFilename = outputDirectroyName + pathSepatator + handle + ".der.cer";
+	                FileOutputStream certificateDumpStream = new FileOutputStream(certificateDumpFilename);
+	                certificateDumpStream.write(value);
+	                certificateDumpStream.flush();
+	                certificateDumpStream.close();
+	              }
+	            }
+	          }
+	          objects = session.findObjects(1);
+	        }
+			session.findObjectsFinal();
+		} catch (TokenException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}		
+		}
 		return null;
 	}
 }
