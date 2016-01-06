@@ -1,7 +1,6 @@
 package api.beans.response;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -18,6 +17,7 @@ public class TokenMechanismsBeanResponse {
 	private ArrayList<String> SingleOperationEncryptDecrypt;
 	private ArrayList<String> SingleOperationSignVerify;
 	private ArrayList<String> WrapUnwrap;
+	private ArrayList<String> Other;
 	
 	public TokenMechanismsBeanResponse(){
 		this.Digest = new ArrayList<String>();
@@ -30,6 +30,7 @@ public class TokenMechanismsBeanResponse {
 	    this.SingleOperationEncryptDecrypt = new ArrayList<String>();
 	    this.SingleOperationSignVerify = new ArrayList<String>();
 	    this.WrapUnwrap = new ArrayList<String>();
+	    this.Other = new ArrayList<String>();
 	}
 	
 
@@ -63,7 +64,9 @@ public class TokenMechanismsBeanResponse {
 	public ArrayList<String> getWrapUnwrap() {
 		return WrapUnwrap;
 	}
-	
+	public ArrayList<String> getOther() {
+		return Other;
+	}
 
 
 	public void setFullEncryptDecrypt(ArrayList<String> fullEncryptDecrypt) {
@@ -110,6 +113,9 @@ public class TokenMechanismsBeanResponse {
 		WrapUnwrap = wrapUnwrap;
 	}
 
+	public void setOther(ArrayList<String> other) {
+		Other = other;
+	}
 
 
 	public void addDigest(String s){
@@ -174,6 +180,12 @@ public class TokenMechanismsBeanResponse {
 	}
 	public void clearWrapUnwrap(){
 	    WrapUnwrap.clear();
+	}
+	public void addOther(String s){
+		Other.add(s);
+	}
+	public void clearOther(){
+		Other.clear();
 	}
 
 

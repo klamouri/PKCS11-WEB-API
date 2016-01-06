@@ -42,9 +42,10 @@ public class TokenMechanismWebServiceImplementation {
 				select.add("KeyGeneration");
 				select.add("KeyPairGeneration");
 				select.add("SignVerifyRecover");
-				select.add("SigleOperationEncryptDecrypt");
-				select.add("SigleOperationSignVerify");
+				select.add("SingleOperationEncryptDecrypt");
+				select.add("SingleOperationSignVerify");
 				select.add("WrapUnwrap");
+				select.add("Other");
 			}
 			for(Mechanism mech : mechList){
 				if(mech.isDigestMechanism() && select.contains("Digest")) {
@@ -76,6 +77,21 @@ public class TokenMechanismWebServiceImplementation {
 				}
 				if(mech.isWrapUnwrapMechanism() && select.contains("WrapUnwrap")) {
 					b.addWrapUnwrap(mech.getName());
+				}
+				if(!mech.isDigestMechanism() && 
+						!mech.isFullEncryptDecryptMechanism() &&
+						!mech.isFullSignVerifyMechanism() &&
+						!mech.isKeyDerivationMechanism() &&
+						!mech.isKeyGenerationMechanism() &&
+						!mech.isKeyPairGenerationMechanism() &&
+						!mech.isSignVerifyRecoverMechanism() &&
+						!mech.isSingleOperationEncryptDecryptMechanism() &&
+						!mech.isSingleOperationSignVerifyMechanism() &&
+						!mech.isWrapUnwrapMechanism() &&
+						select.contains("Other")){
+					if(!mech.getName().contains("Unknwon mechanism with code:")){ //thanks for bad spelling "unknwon"
+						b.addOther(mech.getName());
+					}
 				}
 				
 				
