@@ -13,6 +13,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import api.beans.request.ChangePasswordTokenBeanRequest;
+import api.beans.request.DumpObjectRequest;
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
 import api.beans.response.DumpTokenBeanResponse;
@@ -364,7 +365,7 @@ public class TokenWebServiceImplementation {
 	}
 
 	@SuppressWarnings("unchecked")
-	public DumpTokenBeanResponse tokenDumpObject(HttpServletRequest req, int idToken) {
+	public DumpTokenBeanResponse tokenDumpObject(HttpServletRequest req, DumpObjectRequest r, int idToken) {
 		Session session;
 		Token t;
 
@@ -395,7 +396,7 @@ public class TokenWebServiceImplementation {
 
 		try {
 
-			String outputDirectroyName = "/Users/Karim/pkcsTest";
+			String outputDirectroyName = r.getPath();
 			String pathSepatator = System.getProperty("file.separator");
 			SessionInfo sessionInfo = session.getSessionInfo();
 			output_.println(" using session:");

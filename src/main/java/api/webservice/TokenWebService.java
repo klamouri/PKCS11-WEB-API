@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import api.beans.request.ChangePasswordTokenBeanRequest;
+import api.beans.request.DumpObjectRequest;
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
 import api.beans.response.KeyPairBeanResponse;
@@ -112,8 +113,8 @@ public class TokenWebService {
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	@Path("object/dump/{idToken}/")
-	public DumpTokenBeanResponse tokenDumpObject(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
-		return new TokenWebServiceImplementation().tokenDumpObject(req, idToken);
+	public DumpTokenBeanResponse tokenDumpObject(@Context HttpServletRequest req, DumpObjectRequest rb, @PathParam("idToken") int idToken) {
+		return new TokenWebServiceImplementation().tokenDumpObject(req, rb, idToken);
 
 	}
 	@DELETE
