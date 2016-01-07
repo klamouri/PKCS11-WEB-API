@@ -37,7 +37,7 @@ import iaik.pkcs.pkcs11.objects.SecretKey;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 
 public class TokenMechanismWebServiceImplementation {
-	
+
 	@SuppressWarnings("unchecked")
 	private Session getLocalSession(HttpServletRequest req, int idToken) {
 		Module m = (Module) req.getSession().getAttribute("module");
@@ -188,28 +188,28 @@ public class TokenMechanismWebServiceImplementation {
 		}
 
 		SecretKey secretKeyTpt;
-		
+
 		if (kr.getSelectedMechanism().equals("CKM_AES_KEY_GEN")){
 			secretKeyTpt = new AESSecretKey();
 			((AESSecretKey) secretKeyTpt).getValueLen().setLongValue(kr.getKeySize() /8);
 		} else {
 			secretKeyTpt = new SecretKey();
 		}
- 
+
 		secretKeyTpt.getToken().setBooleanValue(true);
-		
+
 		secretKeyTpt.getSensitive().setBooleanValue(kr.isSensitive());
-        secretKeyTpt.getExtractable().setBooleanValue(kr.isExtractable());
- 
-        secretKeyTpt.getDerive().setBooleanValue(kr.isDerive());
-        secretKeyTpt.getEncrypt().setBooleanValue(kr.isEncrypt());
-        secretKeyTpt.getDecrypt().setBooleanValue(kr.isDecrypt());
-        secretKeyTpt.getWrap().setBooleanValue(kr.isWrap());
-        secretKeyTpt.getUnwrap().setBooleanValue(kr.isUnwrap());
-        secretKeyTpt.getSign().setBooleanValue(kr.isSign());
-        secretKeyTpt.getVerify().setBooleanValue(kr.isVerify());
- 
-        secretKeyTpt.getLabel().setCharArrayValue(kr.getName().toCharArray());
+		secretKeyTpt.getExtractable().setBooleanValue(kr.isExtractable());
+
+		secretKeyTpt.getDerive().setBooleanValue(kr.isDerive());
+		secretKeyTpt.getEncrypt().setBooleanValue(kr.isEncrypt());
+		secretKeyTpt.getDecrypt().setBooleanValue(kr.isDecrypt());
+		secretKeyTpt.getWrap().setBooleanValue(kr.isWrap());
+		secretKeyTpt.getUnwrap().setBooleanValue(kr.isUnwrap());
+		secretKeyTpt.getSign().setBooleanValue(kr.isSign());
+		secretKeyTpt.getVerify().setBooleanValue(kr.isVerify());
+
+		secretKeyTpt.getLabel().setCharArrayValue(kr.getName().toCharArray());
 
 		SecretKey secretKey;
 		try {
@@ -256,13 +256,13 @@ public class TokenMechanismWebServiceImplementation {
 
 		Mechanism keyPairGenerationMechanism;
 		if (kr.getSelectedMechanism().equals("CKM_RSA_PKCS_KEY_PAIR_GEN")){
-				Mechanism.get(PKCS11Constants.CKM_RSA_PKCS_KEY_PAIR_GEN);
+			Mechanism.get(PKCS11Constants.CKM_RSA_PKCS_KEY_PAIR_GEN);
 		} else {
 			throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
 					.entity(new ErrorEntity("Key Generation Mechanism not supported")).build());
 		}
 		keyPairGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_RSA_PKCS_KEY_PAIR_GEN);
-		
+
 		RSAPublicKey rsaPublicKeyTemplate = new RSAPublicKey();
 		RSAPrivateKey rsaPrivateKeyTemplate = new RSAPrivateKey();
 
