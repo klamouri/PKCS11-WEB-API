@@ -1,7 +1,6 @@
 package api.webservice.implementation;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
@@ -19,7 +18,6 @@ import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.Slot;
 import iaik.pkcs.pkcs11.Token;
 import iaik.pkcs.pkcs11.TokenException;
-import iaik.pkcs.pkcs11.TokenInfo;
 import iaik.pkcs.pkcs11.objects.AESSecretKey;
 import iaik.pkcs.pkcs11.objects.KeyPair;
 import iaik.pkcs.pkcs11.objects.RSAPrivateKey;
@@ -28,44 +26,6 @@ import iaik.pkcs.pkcs11.objects.SecretKey;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 
 public class TokenMechanismWebServiceImplementation {
-
-	@SuppressWarnings("unchecked")
-	private Session getLocalSession(HttpServletRequest req, int idToken) {
-		Module m = (Module) req.getSession().getAttribute("module");
-		SecretKeyBeanResponse br = new SecretKeyBeanResponse();
-		if (m == null)
-			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-					.entity(new ErrorEntity("Module is not initialized")).build());
-		try {
-			Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
-
-			if (idToken > slots.length)
-				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-						.entity(new ErrorEntity("You're trying to use an out of range ID for the slot")).build());
-			Slot s = slots[idToken];
-			Token t = s.getToken();
-			TokenInfo tInfo = t.getTokenInfo();
-			Session sess;
-			if(tInfo.isLoginRequired()){
-				// Recup session log
-				Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
-				if (map != null && map.get(Integer.valueOf(idToken)) != null)
-					sess = map.get(Integer.valueOf(idToken));
-				else
-					throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-							.entity(new ErrorEntity("You need to be logged into the token to continue")).build());
-			}
-			else{
-				//Recup session non log
-				sess = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RW_SESSION, null, null);
-			}
-			return sess;
-		} catch (TokenException e) {
-			e.printStackTrace();
-			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
-					.entity(new ErrorEntity("Ooops- Problem while retriving the session")).build());
-		}
-	}
 
 	public TokenMechanismsBeanResponse tokenMechanisms(HttpServletRequest req, int idToken, List<String> select) {
 		Module m = (Module) req.getSession().getAttribute("module");
@@ -149,7 +109,7 @@ public class TokenMechanismWebServiceImplementation {
 
 	@SuppressWarnings("all")
 	public SecretKeyBeanResponse genSecretKey(HttpServletRequest req, KeyRequest kr, int idToken) {
-		Session sess = getLocalSession(req, idToken);
+		Session sess = SessionWebServiceImplementation.getLocalSession(req, idToken);
 
 		SecretKeyBeanResponse br = new SecretKeyBeanResponse();
 
@@ -241,7 +201,7 @@ public class TokenMechanismWebServiceImplementation {
 
 
 	public KeyPairBeanResponse genKeyPair(HttpServletRequest req, KeyRequest kr, int idToken) {
-		Session sess = getLocalSession(req, idToken);
+		Session sess = SessionWebServiceImplementation.getLocalSession(req, idToken);
 
 		KeyPairBeanResponse br = new KeyPairBeanResponse();
 

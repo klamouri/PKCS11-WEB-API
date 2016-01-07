@@ -23,6 +23,43 @@ import iaik.pkcs.pkcs11.TokenInfo;
 public class SessionWebServiceImplementation {
 
 	private Logger logger = Logger.getLogger(this.getClass().toString());
+	
+	@SuppressWarnings("unchecked")
+	public static Session getLocalSession(HttpServletRequest req, int idToken) {
+		Module m = (Module) req.getSession().getAttribute("module");
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
+		try {
+			Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+
+			if (idToken > slots.length)
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You're trying to use an out of range ID for the slot")).build());
+			Slot s = slots[idToken];
+			Token t = s.getToken();
+			TokenInfo tInfo = t.getTokenInfo();
+			Session sess;
+			if(tInfo.isLoginRequired()){
+				// Recup session log
+				Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
+				if (map != null && map.get(Integer.valueOf(idToken)) != null)
+					sess = map.get(Integer.valueOf(idToken));
+				else
+					throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+							.entity(new ErrorEntity("You need to be logged into the token to continue")).build());
+			}
+			else{
+				//Recup session non log
+				sess = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RW_SESSION, null, null);
+			}
+			return sess;
+		} catch (TokenException e) {
+			e.printStackTrace();
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Ooops- Problem while retriving the session")).build());
+		}
+	}
 
 	public Response login(HttpServletRequest req, LoginRequest r, int idToken) {
 		try {
