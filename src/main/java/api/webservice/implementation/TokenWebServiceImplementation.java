@@ -496,6 +496,7 @@ public class TokenWebServiceImplementation {
 	public Response deleteObject(HttpServletRequest req, int idToken, long objectHandle) {
 		Session session;
 		Module m = (Module) req.getSession().getAttribute("module");
+		boolean deleteSomething = false;
 		if (m == null)
 			throw new WebApplicationException(
 					Response.status(Status.UNAUTHORIZED).entity(new ErrorEntity("Module is not initialized")).build());
@@ -515,6 +516,7 @@ public class TokenWebServiceImplementation {
 				if (objects[0].getObjectHandle() == objectHandle) {
 					try {
 						session.destroyObject(objects[0]);
+						deleteSomething = true;
 					} catch (TokenException e) {
 						throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
 								.entity(new ErrorEntity("Couldn't remove the object")).build());
@@ -525,7 +527,11 @@ public class TokenWebServiceImplementation {
 			}
 
 			session.findObjectsFinal();
-			return Response.status(Status.NO_CONTENT).build();
+			if(deleteSomething)
+				return Response.status(Status.NO_CONTENT).build();
+			else
+				throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+						.entity(new ErrorEntity("Object doesn't exist")).build());
 		} catch (TokenException e) {
 			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
 					.entity(new ErrorEntity("Couldn't list the object on the token")).build());
