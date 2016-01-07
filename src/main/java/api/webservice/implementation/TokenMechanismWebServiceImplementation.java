@@ -162,18 +162,58 @@ public class TokenMechanismWebServiceImplementation {
 
 		SecretKeyBeanResponse br = new SecretKeyBeanResponse();
 
-		Mechanism keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
+		Mechanism keyGenerationMechanism;
+		switch (kr.getSelectedMechanism()) {
+		case "CKM_DES_KEY_GEN" :
+			keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_DES_KEY_GEN);
+			break;
+		case "CKM_DES2_KEY_GEN" :
+			keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_DES2_KEY_GEN);
+			break;
+		case "CKM_DES3_KEY_GEN" :
+			keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_DES3_KEY_GEN);
+			break;
+		case "CKM_AES_KEY_GEN" :
+			keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
+			break;
+		case "CKM_DSA_PARAMETER_GEN" :
+			keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_DSA_PARAMETER_GEN);
+			break;
+		case "CKM_DH_PKCS_PARAMETER_GEN" : 
+			keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_DH_PKCS_PARAMETER_GEN);
+			break;
+		default:
+			keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
+			break;
+		}
 
-		AESSecretKey secretKeyTpt = new AESSecretKey();
-
-		secretKeyTpt.getValueLen().setLongValue(new Long(32)); 
+		SecretKey secretKeyTpt;
+		
+		if (kr.getSelectedMechanism().equals("CKM_AES_KEY_GEN")){
+			secretKeyTpt = new AESSecretKey();
+			((AESSecretKey) secretKeyTpt).getValueLen().setLongValue(kr.getKeySize() /8);
+		} else {
+			secretKeyTpt = new SecretKey();
+		}
+ 
 		secretKeyTpt.getToken().setBooleanValue(true);
-		secretKeyTpt.getExtractable().setBooleanValue(true);
-		secretKeyTpt.getLabel().setCharArrayValue(Calendar.getInstance().getTime().toString().toCharArray());
+		
+		secretKeyTpt.getSensitive().setBooleanValue(kr.isSensitive());
+        secretKeyTpt.getExtractable().setBooleanValue(kr.isExtractable());
+ 
+        secretKeyTpt.getDerive().setBooleanValue(kr.isDerive());
+        secretKeyTpt.getEncrypt().setBooleanValue(kr.isEncrypt());
+        secretKeyTpt.getDecrypt().setBooleanValue(kr.isDecrypt());
+        secretKeyTpt.getWrap().setBooleanValue(kr.isWrap());
+        secretKeyTpt.getUnwrap().setBooleanValue(kr.isUnwrap());
+        secretKeyTpt.getSign().setBooleanValue(kr.isSign());
+        secretKeyTpt.getVerify().setBooleanValue(kr.isVerify());
+ 
+        secretKeyTpt.getLabel().setCharArrayValue(kr.getName().toCharArray());
 
 		SecretKey secretKey;
 		try {
-			secretKey = (AESSecretKey)sess.generateKey(keyGenerationMechanism, secretKeyTpt);
+			secretKey = (SecretKey) sess.generateKey(keyGenerationMechanism, secretKeyTpt);
 			br.setLabel(secretKey.getLabel().toString());
 			br.setModifiable(secretKey.getModifiable().getBooleanValue());
 			br.setPrivated(secretKey.getPrivate().getBooleanValue());
