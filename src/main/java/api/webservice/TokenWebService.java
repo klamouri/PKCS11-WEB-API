@@ -19,6 +19,7 @@ import api.beans.request.ChangePasswordTokenBeanRequest;
 import api.beans.request.DumpObjectRequest;
 import api.beans.request.InitTokenBeanRequest;
 import api.beans.request.InitUserPasswordTokenBeanRequest;
+import api.beans.request.KeyRequest;
 import api.beans.response.KeyPairBeanResponse;
 import api.beans.response.RandomBeanResponse;
 import api.beans.response.SecretKeyBeanResponse;
@@ -83,18 +84,20 @@ public class TokenWebService {
 
 	}
 	
-	@GET
+	@PUT
+	@Consumes({MediaType.APPLICATION_JSON})
 	@Produces({ MediaType.APPLICATION_JSON })	
 	@Path("SecretKey/{idToken}")
-	public SecretKeyBeanResponse genSecretKey(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
-		return new TokenMechanismWebServiceImplementation().genSecretKey(req, idToken);
+	public SecretKeyBeanResponse genSecretKey(@Context HttpServletRequest req, KeyRequest kr, @PathParam("idToken") int idToken) {
+		return new TokenMechanismWebServiceImplementation().genSecretKey(req, kr, idToken);
 	}
 	
-	@GET
+	@PUT
+	@Consumes({MediaType.APPLICATION_JSON})
 	@Produces({ MediaType.APPLICATION_JSON })	
 	@Path("KeyPair/{idToken}")
-	public KeyPairBeanResponse genKeyPair(@Context HttpServletRequest req, @PathParam("idToken") int idToken) {
-		return new TokenMechanismWebServiceImplementation().genKeyPair(req, idToken);
+	public KeyPairBeanResponse genKeyPair(@Context HttpServletRequest req, KeyRequest kr, @PathParam("idToken") int idToken) {
+		return new TokenMechanismWebServiceImplementation().genKeyPair(req, kr, idToken);
 	}
 
 	@GET

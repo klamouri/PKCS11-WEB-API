@@ -12,6 +12,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import api.beans.request.KeyRequest;
 import api.beans.response.KeyPairBeanResponse;
 import api.beans.response.SecretKeyBeanResponse;
 import api.beans.response.TokenMechanismsBeanResponse;
@@ -36,6 +37,45 @@ import iaik.pkcs.pkcs11.objects.SecretKey;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 
 public class TokenMechanismWebServiceImplementation {
+	
+	@SuppressWarnings("unchecked")
+	private Session getLocalSession(HttpServletRequest req, int idToken) {
+		Module m = (Module) req.getSession().getAttribute("module");
+		SecretKeyBeanResponse br = new SecretKeyBeanResponse();
+		if (m == null)
+			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+					.entity(new ErrorEntity("Module is not initialized")).build());
+		try {
+			Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+
+			if (idToken > slots.length)
+				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+						.entity(new ErrorEntity("You're trying to use an out of range ID for the slot")).build());
+			Slot s = slots[idToken];
+			Token t = s.getToken();
+			TokenInfo tInfo = t.getTokenInfo();
+			Session sess;
+			if(tInfo.isLoginRequired()){
+				// Recup session log
+				Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
+				if (map != null && map.get(Integer.valueOf(idToken)) != null)
+					sess = map.get(Integer.valueOf(idToken));
+				else
+					throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
+							.entity(new ErrorEntity("You need to be logged into the token to continue")).build());
+			}
+			else{
+				//Recup session non log
+				sess = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RW_SESSION, null, null);
+			}
+			return sess;
+		} catch (TokenException e) {
+			e.printStackTrace();
+			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity(new ErrorEntity("Ooops- Problem while retriving the session")).build());
+		}
+	}
+
 	public TokenMechanismsBeanResponse tokenMechanisms(HttpServletRequest req, int idToken, List<String> select) {
 		Module m = (Module) req.getSession().getAttribute("module");
 		if (m == null)
@@ -117,44 +157,23 @@ public class TokenMechanismWebServiceImplementation {
 	}
 
 	@SuppressWarnings("all")
-	public SecretKeyBeanResponse genSecretKey(HttpServletRequest req, int idToken) {
-		Module m = (Module) req.getSession().getAttribute("module");
+	public SecretKeyBeanResponse genSecretKey(HttpServletRequest req, KeyRequest kr, int idToken) {
+		Session sess = getLocalSession(req, idToken);
+
 		SecretKeyBeanResponse br = new SecretKeyBeanResponse();
-		if (m == null)
-			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-					.entity(new ErrorEntity("Module is not initialized")).build());
+
+		Mechanism keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
+
+		AESSecretKey secretKeyTpt = new AESSecretKey();
+
+		secretKeyTpt.getValueLen().setLongValue(new Long(32)); 
+		secretKeyTpt.getToken().setBooleanValue(true);
+		secretKeyTpt.getExtractable().setBooleanValue(true);
+		secretKeyTpt.getLabel().setCharArrayValue(Calendar.getInstance().getTime().toString().toCharArray());
+
+		SecretKey secretKey;
 		try {
-			Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
-
-			if (idToken > slots.length)
-				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-						.entity(new ErrorEntity("You're trying to use an out of range ID for the slot")).build());
-			Slot s = slots[idToken];
-			Token t = s.getToken();
-			TokenInfo tInfo = t.getTokenInfo();
-			Session sess;
-			if(tInfo.isLoginRequired()){
-				// Recup session log
-				Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
-				if (map != null && map.get(Integer.valueOf(idToken)) != null)
-					sess = map.get(Integer.valueOf(idToken));
-				else
-					throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-							.entity(new ErrorEntity("You need to be logged into the token to continue")).build());
-			}
-			else{
-				//Recup session non log
-				sess = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RW_SESSION, null, null);
-			}
-			Mechanism keyGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_AES_KEY_GEN);
-			AESSecretKey secretKeyTpt = new AESSecretKey();
-			secretKeyTpt.getValueLen().setLongValue(new Long(32)); 
-			secretKeyTpt.getToken().setBooleanValue(true);
-			secretKeyTpt.getExtractable().setBooleanValue(true);
-			secretKeyTpt.getLabel().setCharArrayValue(Calendar.getInstance().getTime().toString().toCharArray());
-
-			SecretKey secretKey = (AESSecretKey)sess.generateKey(keyGenerationMechanism, secretKeyTpt);
-
+			secretKey = (AESSecretKey)sess.generateKey(keyGenerationMechanism, secretKeyTpt);
 			br.setLabel(secretKey.getLabel().toString());
 			br.setModifiable(secretKey.getModifiable().getBooleanValue());
 			br.setPrivated(secretKey.getPrivate().getBooleanValue());
@@ -182,144 +201,76 @@ public class TokenMechanismWebServiceImplementation {
 			br.setKeyType(secretKey.getKeyType());
 			br.setLocal(secretKey.getLocal().getBooleanValue());
 			br.setStartDate(secretKey.getEndDate().toString());
-			return br;
-
 		} catch (TokenException e) {
-			e.printStackTrace();
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
-					.entity(new ErrorEntity("Unable to perform secret key generation")).build());
+					.entity(new ErrorEntity("Internal error while generating Key")).build());
 		}
+		return br;
 	}
 
-	@SuppressWarnings("unchecked")
-	public KeyPairBeanResponse genKeyPair(HttpServletRequest req, int idToken) {
-		Module m = (Module) req.getSession().getAttribute("module");
+
+	public KeyPairBeanResponse genKeyPair(HttpServletRequest req, KeyRequest kr, int idToken) {
+		Session sess = getLocalSession(req, idToken);
+
 		KeyPairBeanResponse br = new KeyPairBeanResponse();
-		if (m == null)
-			throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-					.entity(new ErrorEntity("Module is not initialized")).build());
+
+		Mechanism keyPairGenerationMechanism;
+		if (kr.getSelectedMechanism().equals("CKM_RSA_PKCS_KEY_PAIR_GEN")){
+				Mechanism.get(PKCS11Constants.CKM_RSA_PKCS_KEY_PAIR_GEN);
+		} else {
+			throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
+					.entity(new ErrorEntity("Key Generation Mechanism not supported")).build());
+		}
+		keyPairGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_RSA_PKCS_KEY_PAIR_GEN);
+		
+		RSAPublicKey rsaPublicKeyTemplate = new RSAPublicKey();
+		RSAPrivateKey rsaPrivateKeyTemplate = new RSAPrivateKey();
+
+		rsaPublicKeyTemplate.getModulusBits().setLongValue(kr.getKeySize());//
+		rsaPublicKeyTemplate.getToken().setBooleanValue(true);
+
+		rsaPrivateKeyTemplate.getSensitive().setBooleanValue(kr.isSensitive());//
+		rsaPrivateKeyTemplate.getExtractable().setBooleanValue(kr.isExtractable());//
+
+		rsaPublicKeyTemplate.getDerive().setBooleanValue(false);
+		rsaPublicKeyTemplate.getEncrypt().setBooleanValue(kr.isEncrypt());//
+		rsaPublicKeyTemplate.getWrap().setBooleanValue(kr.isWrap());//
+		rsaPublicKeyTemplate.getVerify().setBooleanValue(kr.isVerify());//
+
+		String keyName = kr.getName();
+
+		rsaPublicKeyTemplate.getLabel().setCharArrayValue((keyName + ".pub").toCharArray());//name
+
+		rsaPrivateKeyTemplate.getDerive().setBooleanValue(false);
+		rsaPrivateKeyTemplate.getDecrypt().setBooleanValue(kr.isDecrypt());//
+		rsaPrivateKeyTemplate.getUnwrap().setBooleanValue(kr.isUnwrap());//
+		rsaPrivateKeyTemplate.getSign().setBooleanValue(kr.isSign());//
+		rsaPrivateKeyTemplate.getToken().setBooleanValue(true);
+
+		rsaPrivateKeyTemplate.getLabel().setCharArrayValue(keyName.toCharArray());
+
+		System.out.println("Pub template");
+		System.out.println(rsaPublicKeyTemplate);
+		System.out.println("Priv tempalte");
+		System.out.println(rsaPrivateKeyTemplate);
+
+		KeyPair generatedKeyPair;
 		try {
-			Slot[] slots = m.getSlotList(Module.SlotRequirement.ALL_SLOTS);
+			generatedKeyPair = sess.generateKeyPair(keyPairGenerationMechanism, rsaPublicKeyTemplate, rsaPrivateKeyTemplate);
 
-			if (idToken > slots.length)
-				throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-						.entity(new ErrorEntity("You're trying to use an out of range ID for the slot")).build());
-			Slot s = slots[idToken];
-			Token t = s.getToken();
-			TokenInfo tInfo = t.getTokenInfo();
-			Session sess;
-			if(tInfo.isLoginRequired()){
-				// Recup session log
-				Map<Integer, Session> map = (Map<Integer, Session>) req.getSession().getAttribute("session");
-				if (map != null && map.get(Integer.valueOf(idToken)) != null)
-					sess = map.get(Integer.valueOf(idToken));
-				else
-					throw new WebApplicationException(Response.status(Status.UNAUTHORIZED)
-							.entity(new ErrorEntity("You need to be logged into the token to continue")).build());
-			}
-			else{
-				//Recup session non log
-				sess = t.openSession(Token.SessionType.SERIAL_SESSION, Token.SessionReadWriteBehavior.RW_SESSION, null, null);
-			}
-			MechanismInfo signatureMechanismInfo = t.getMechanismInfo(Mechanism.get(PKCS11Constants.CKM_RSA_PKCS));
-
-			Mechanism keyPairGenerationMechanism = Mechanism.get(PKCS11Constants.CKM_RSA_PKCS_KEY_PAIR_GEN);
-			RSAPublicKey rsaPublicKeyTemplate = new RSAPublicKey();
-			RSAPrivateKey rsaPrivateKeyTemplate = new RSAPrivateKey();
-
-			// set the general attributes for the public key
-			rsaPublicKeyTemplate.getModulusBits().setLongValue(new Long(1024)); //TODO set customizable key length
-			byte[] publicExponentBytes = {0x01, 0x00, 0x01}; // 2^16 + 1
-			rsaPublicKeyTemplate.getPublicExponent().setByteArrayValue(publicExponentBytes);
-			rsaPublicKeyTemplate.getToken().setBooleanValue(Boolean.FALSE);
-			byte[] id = new byte[20];
-			new Random().nextBytes(id);
-			rsaPublicKeyTemplate.getId().setByteArrayValue(id);
-			//rsaPublicKeyTemplate.getLabel().setCharArrayValue(args[2].toCharArray());
-
-			rsaPrivateKeyTemplate.getSensitive().setBooleanValue(Boolean.TRUE);
-			rsaPrivateKeyTemplate.getToken().setBooleanValue(Boolean.FALSE);
-			rsaPrivateKeyTemplate.getPrivate().setBooleanValue(Boolean.TRUE);
-			rsaPrivateKeyTemplate.getId().setByteArrayValue(id);
-			//byte[] subject = args[1].getBytes();
-			//rsaPrivateKeyTemplate.getSubject().setByteArrayValue(subject);
-			//rsaPrivateKeyTemplate.getLabel().setCharArrayValue(args[2].toCharArray());
-
-			try{
-				Version cryptokiVersion = m.getInfo().getCryptokiVersion();
-				if ((cryptokiVersion.getMajor() >= 2) && (cryptokiVersion.getMinor() >= 20)){
-					GenericTemplate wrapTemplate = new GenericTemplate();
-					GregorianCalendar startDate = new GregorianCalendar();
-					startDate.add(Calendar.HOUR_OF_DAY, -1);
-					DateAttribute startDateAttr = new DateAttribute(Attribute.START_DATE);
-					startDateAttr.setDateValue(startDate.getTime());
-					wrapTemplate.addAttribute(startDateAttr);
-					GregorianCalendar endDate = new GregorianCalendar();
-					endDate.add(Calendar.MONTH, 11);
-					DateAttribute endDateAttr = new DateAttribute(Attribute.END_DATE);
-					endDateAttr.setDateValue(endDate.getTime());
-					wrapTemplate.addAttribute(endDateAttr);
-					rsaPublicKeyTemplate.getWrapTemplate().setAttributeArrayValue(wrapTemplate);
-
-					Mechanism[] allowedMechanisms = new Mechanism[1];
-					Mechanism mechanism1 = new Mechanism(PKCS11Constants.CKM_RSA_PKCS);
-					allowedMechanisms[0] = mechanism1;
-					rsaPrivateKeyTemplate.getAllowedMechanisms().setMechanismAttributeArrayValue(allowedMechanisms);
-				}
-			}catch(TokenException e){
-				e.printStackTrace();
-			}
-
-			// set the attributes in a way netscape does, this should work with most tokens
-			if (signatureMechanismInfo != null) {
-				rsaPublicKeyTemplate.getVerify().setBooleanValue(new Boolean(signatureMechanismInfo.isVerify()));
-				rsaPublicKeyTemplate.getVerifyRecover().setBooleanValue(new Boolean(signatureMechanismInfo.isVerifyRecover()));
-				rsaPublicKeyTemplate.getEncrypt().setBooleanValue(new Boolean(signatureMechanismInfo.isEncrypt()));
-				rsaPublicKeyTemplate.getDerive().setBooleanValue(new Boolean(signatureMechanismInfo.isDerive()));
-				rsaPublicKeyTemplate.getWrap().setBooleanValue(new Boolean(signatureMechanismInfo.isWrap()));
-
-				rsaPrivateKeyTemplate.getSign().setBooleanValue(new Boolean(signatureMechanismInfo.isSign()));
-				rsaPrivateKeyTemplate.getSignRecover().setBooleanValue(new Boolean(signatureMechanismInfo.isSignRecover()));
-				rsaPrivateKeyTemplate.getDecrypt().setBooleanValue(new Boolean(signatureMechanismInfo.isDecrypt()));
-				rsaPrivateKeyTemplate.getDerive().setBooleanValue(new Boolean(signatureMechanismInfo.isDerive()));
-				rsaPrivateKeyTemplate.getUnwrap().setBooleanValue(new Boolean(signatureMechanismInfo.isUnwrap()));
-			} else {
-				// if we have no information we assume these attributes
-				rsaPrivateKeyTemplate.getSign().setBooleanValue(Boolean.TRUE);
-				rsaPrivateKeyTemplate.getDecrypt().setBooleanValue(Boolean.TRUE);
-
-				rsaPublicKeyTemplate.getVerify().setBooleanValue(Boolean.TRUE);
-				rsaPublicKeyTemplate.getEncrypt().setBooleanValue(Boolean.TRUE);
-			}
-
-			// netscape does not set these attribute, so we do no either
-			rsaPublicKeyTemplate.getKeyType().setPresent(false);
-			rsaPublicKeyTemplate.getObjectClass().setPresent(false);
-
-			rsaPrivateKeyTemplate.getKeyType().setPresent(false);
-			rsaPrivateKeyTemplate.getObjectClass().setPresent(false);
-			
-			System.out.println("Pub template");
-			System.out.println(rsaPublicKeyTemplate);
-			System.out.println("Priv tempalte");
-			System.out.println(rsaPrivateKeyTemplate);
-			
-			
-			KeyPair generatedKeyPair = sess.generateKeyPair(keyPairGenerationMechanism, rsaPublicKeyTemplate, rsaPrivateKeyTemplate);
 
 			RSAPublicKey generatedRSAPublicKey = (RSAPublicKey) generatedKeyPair.getPublicKey();
 			RSAPrivateKey generatedRSAPrivateKey = (RSAPrivateKey) generatedKeyPair.getPrivateKey();
-			
+
 			br.setPubKey(generatedRSAPublicKey.toString());
 			br.setPrivKey(generatedRSAPrivateKey.toString());
-			
-			return br;
-
 		} catch (TokenException e) {
 			e.printStackTrace();
 			throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
-					.entity(new ErrorEntity(e.getMessage())).build());
+					.entity(new ErrorEntity("Internal error while generating Key")).build());
 		}
-//		return null;
-	}
+
+		return br;
+
+	} 
 }
