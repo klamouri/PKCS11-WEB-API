@@ -12,16 +12,8 @@ This application is a web application which need to be deployed on a web server.
 3. Put the [PKCS11 Wrapper jar](https://jce.iaik.tugraz.at/sic/Products/Core_Crypto_Toolkits/PKCS_11_Wrapper) in the folder `libs/iaik/pkcs11Wrapper/1.0/` under the name `pkcs11Wrapper-1.0.jar`
 4. The application is ready to be deployed
 
-## Test
-To know if your application is correctly deployed.  
-Make sure there is no tomcat already running.
-
-    mvn tomcat7:run 
-    curl http://<yourhost>:<port>/pkcs11-api/webapi/myresource
-
-If the application is correctly setup you should see the following message
-
->Got it!
+## Test 
+In order to test the webservices, you can use the Chrome extension Postman with the provided `PKCS.json.postman_collection`.
 
 ## Deploy the application
 If you're just developping with this API, you just have to follow the instructions in the Test section.
@@ -36,3 +28,4 @@ If you're just developping with this API, you just have to follow the instructio
 ## Licence
 
 This application is under MIT Licence. (At the exception of the wrapper)
+
